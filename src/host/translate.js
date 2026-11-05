@@ -79,6 +79,10 @@ function parseTitleTranslations(text, count) {
   return [];
 }
 
+function stripSectionHeading(value = '') {
+  return String(value).replace(/^\s*\d+(?:\.\d+)*\s+[^\n]{0,80}\n+/, '').trim();
+}
+
 export function createTranslator({ ctx, config, cache }) {
   const provider = String(config.llmProvider || '').trim();
   const model = String(config.llmModel || '').trim();
@@ -126,10 +130,10 @@ export function createTranslator({ ctx, config, cache }) {
     let output = '';
     try {
       const messages = [{ role: 'user', content: [{ type: 'text', text: userText }] }];
-      let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000 };
+      let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000, reasoningEffort: 'off' };
       let streamCall;
       if (typeof llm.prepareCall === 'function') {
-        const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000 }, controller.signal);
+        const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000, reasoningEffort: 'off' }, controller.signal);
         callConfig = prepared.config;
         streamCall = (options) => prepared.stream(options);
       } else {
@@ -137,6 +141,7 @@ export function createTranslator({ ctx, config, cache }) {
       }
       const chunks = streamCall({
         ...callConfig,
+        reasoningEffort: 'off',
         messages,
         system: target === 'fr' ? SYSTEM_FR : SYSTEM_ZH,
         signal: controller.signal,
@@ -194,11 +199,11 @@ export function createTranslator({ ctx, config, cache }) {
     let output = '';
     try {
       const messages = [{ role: 'user', content: [{ type: 'text', text: titleList }] }];
-      let callConfig = { provider: route.provider, model: route.model, maxTokens: Math.min(4000, 200 + pending.length * 90) };
+      let callConfig = { provider: route.provider, model: route.model, maxTokens: Math.min(4000, 200 + pending.length * 90), reasoningEffort: 'off' };
       let streamCall;
       if (typeof llm.prepareCall === 'function') {
         const prepared = await llm.prepareCall(
-          { provider: route.provider, model: route.model, maxTokens: callConfig.maxTokens },
+          { provider: route.provider, model: route.model, maxTokens: callConfig.maxTokens, reasoningEffort: 'off' },
           controller.signal,
         );
         callConfig = prepared.config;
@@ -208,6 +213,7 @@ export function createTranslator({ ctx, config, cache }) {
       }
       const chunks = streamCall({
         ...callConfig,
+        reasoningEffort: 'off',
         messages,
         system: target === 'fr' ? TITLES_FR : TITLES_ZH,
         signal: controller.signal,
@@ -248,7 +254,7 @@ export function createTranslator({ ctx, config, cache }) {
 
     const key = digest(`section-v3\n${target}\n${route.provider}/${route.model}\n${headingText}\n${source}`);
     const cached = cache.get(key);
-    if (cached?.text) return { ...cached, cached: true };
+    if (cached?.text) return { ...cached, text: stripSectionHeading(cached.text), cached: true };
 
     let translated = '';
     let lastError = null;
@@ -260,10 +266,10 @@ export function createTranslator({ ctx, config, cache }) {
         const messages = [
           { role: 'user', content: [{ type: 'text', text: `${headingText ? `SECTION: ${headingText}\n\n` : ''}${source}` }] },
         ];
-        let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000 };
+        let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000, reasoningEffort: 'off' };
         let streamCall;
         if (typeof llm.prepareCall === 'function') {
-          const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000 }, controller.signal);
+          const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000, reasoningEffort: 'off' }, controller.signal);
           callConfig = prepared.config;
           streamCall = (options) => prepared.stream(options);
         } else {
@@ -271,6 +277,7 @@ export function createTranslator({ ctx, config, cache }) {
         }
         const chunks = streamCall({
           ...callConfig,
+          reasoningEffort: 'off',
           messages,
           system: target === 'fr' ? SECTION_FR : SECTION_ZH,
           signal: controller.signal,
@@ -291,6 +298,8 @@ export function createTranslator({ ctx, config, cache }) {
       if (!translated && attempt === 0) await new Promise((resolve) => setTimeout(resolve, 400));
     }
 
+    if (!translated) throw lastError || new Error('模型没有返回译文。');
+    translated = stripSectionHeading(translated);
     if (!translated) throw lastError || new Error('模型没有返回译文。');
     const result = { text: translated, lang: target, at: Date.now() };
     cache.set(key, result);
