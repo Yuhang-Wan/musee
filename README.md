@@ -1,5 +1,7 @@
 # Musee
 
+[![CI](https://github.com/Yuhang-Wan/musee/actions/workflows/ci.yml/badge.svg)](https://github.com/Yuhang-Wan/musee/actions/workflows/ci.yml)
+
 > 在 DeepSeek Harness 里读期刊、译摘要、管引用。
 
 Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的一个文献工作台插件：按学科浏览期刊最新论文与 arXiv 预印本，提供学术化中英翻译、期刊引用格式、一键与批量引用、收藏和阅读笔记。数据来自 OpenAlex 与 arXiv，个人数据全部保存在本地。
