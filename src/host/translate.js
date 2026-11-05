@@ -250,41 +250,48 @@ export function createTranslator({ ctx, config, cache }) {
     const cached = cache.get(key);
     if (cached?.text) return { ...cached, cached: true };
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 120000);
-    let output = '';
-    try {
-      const messages = [
-        { role: 'user', content: [{ type: 'text', text: `${headingText ? `SECTION: ${headingText}\n\n` : ''}${source}` }] },
-      ];
-      let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000 };
-      let streamCall;
-      if (typeof llm.prepareCall === 'function') {
-        const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000 }, controller.signal);
-        callConfig = prepared.config;
-        streamCall = (options) => prepared.stream(options);
-      } else {
-        streamCall = (options) => llm.stream(options);
-      }
-      const chunks = streamCall({
-        ...callConfig,
-        messages,
-        system: target === 'fr' ? SECTION_FR : SECTION_ZH,
-        signal: controller.signal,
-      });
-      for await (const chunk of chunks) {
-        if (chunk.type === 'text-delta') output += chunk.text;
-        if (chunk.type === 'finish') {
-          if (chunk.reason?.kind === 'error') throw new Error(chunk.reason.failure?.message || '模型调用失败。');
-          if (chunk.reason?.kind === 'aborted') throw new Error('翻译已取消。');
+    let translated = '';
+    let lastError = null;
+    for (let attempt = 0; attempt < 2 && !translated; attempt += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 90000);
+      let output = '';
+      try {
+        const messages = [
+          { role: 'user', content: [{ type: 'text', text: `${headingText ? `SECTION: ${headingText}\n\n` : ''}${source}` }] },
+        ];
+        let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000 };
+        let streamCall;
+        if (typeof llm.prepareCall === 'function') {
+          const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000 }, controller.signal);
+          callConfig = prepared.config;
+          streamCall = (options) => prepared.stream(options);
+        } else {
+          streamCall = (options) => llm.stream(options);
         }
+        const chunks = streamCall({
+          ...callConfig,
+          messages,
+          system: target === 'fr' ? SECTION_FR : SECTION_ZH,
+          signal: controller.signal,
+        });
+        for await (const chunk of chunks) {
+          if (chunk.type === 'text-delta') output += chunk.text;
+          if (chunk.type === 'finish') {
+            if (chunk.reason?.kind === 'error') throw new Error(chunk.reason.failure?.message || '模型调用失败。');
+            if (chunk.reason?.kind === 'aborted') throw new Error('翻译已取消。');
+          }
+        }
+        translated = stripFences(output).replace(/^#{1,3}\s*/, '').trim();
+      } catch (error) {
+        lastError = error;
+      } finally {
+        clearTimeout(timer);
       }
-    } finally {
-      clearTimeout(timer);
+      if (!translated && attempt === 0) await new Promise((resolve) => setTimeout(resolve, 400));
     }
 
-    const translated = stripFences(output).replace(/^#{1,3}\s*/, '').trim();
-    if (!translated) throw new Error('模型没有返回译文。');
+    if (!translated) throw lastError || new Error('模型没有返回译文。');
     const result = { text: translated, lang: target, at: Date.now() };
     cache.set(key, result);
     return { ...result, cached: false };

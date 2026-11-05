@@ -20,6 +20,12 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function issnKey(value) {
+  const raw = String(value || '').trim().toUpperCase();
+  const compact = raw.replace(/[^0-9X]/g, '');
+  return compact.length === 8 ? `${compact.slice(0, 4)}-${compact.slice(4)}` : raw;
+}
+
 export async function createStore(dataDir) {
   const cacheDir = path.join(dataDir, 'cache');
   await fs.mkdir(cacheDir, { recursive: true });
@@ -40,7 +46,7 @@ export async function createStore(dataDir) {
   const impactFactors = {};
   for (const [issn, value] of Object.entries(await readJson(impactPath, {}))) {
     const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) impactFactors[String(issn)] = numeric;
+    if (Number.isFinite(numeric) && numeric > 0) impactFactors[issnKey(issn)] = numeric;
   }
 
   const translations = new Map(Object.entries(await readJson(cachePath, {})));
@@ -84,7 +90,24 @@ export async function createStore(dataDir) {
   }
 
   function impactFactor(issn) {
-    return impactFactors[String(issn || '')] ?? null;
+    return impactFactors[issnKey(issn)] ?? null;
+  }
+
+  async function setImpactFactors(values) {
+    const entries = Array.isArray(values)
+      ? values.map((entry) => [entry?.issn, entry?.value ?? entry?.if ?? entry?.impactFactor])
+      : Object.entries(values || {});
+    const clean = {};
+    for (const [issn, value] of entries.slice(0, 5000)) {
+      const key = issnKey(issn);
+      const numeric = Number(value);
+      if (!key || !Number.isFinite(numeric) || numeric <= 0 || numeric > 1000) continue;
+      clean[key] = Math.round(numeric * 1000) / 1000;
+    }
+    for (const key of Object.keys(impactFactors)) delete impactFactors[key];
+    Object.assign(impactFactors, clean);
+    await writeAtomic(impactPath, JSON.stringify(clean, null, 2));
+    return { count: Object.keys(clean).length, path: impactPath };
   }
 
   async function savePaper(paper) {
@@ -241,5 +264,6 @@ export async function createStore(dataDir) {
     followJournal,
     unfollowJournal,
     impactFactor,
+    setImpactFactors,
   };
 }

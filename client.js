@@ -78,6 +78,7 @@ window.__ModuleLoader__.load({
           return request(`/fulltext?${params.toString()}`);
         },
         preferences: () => request("/preferences"),
+        importImpactFactors: (values) => request("/impact-factors", { method: "POST", body: { values } }),
         follow: (journalId, follow) => request("/preferences", { method: "POST", body: { action: follow ? "follow" : "unfollow", journalId } }),
         home: () => request("/home"),
         pdfUrl: async (arxivId) => {
@@ -587,6 +588,13 @@ window.__ModuleLoader__.load({
     .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
     .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
     .musee-resume { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: var(--musee-accent); font-size: 11.5px; cursor: pointer; }
+    .musee-file {
+      display: inline-flex; align-items: center; gap: 6px; margin: 4px 0;
+      padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 7px;
+      color: var(--dsw-alias-label-primary); font-size: 12px; cursor: pointer;
+    }
+    .musee-file:hover { background: var(--dsw-alias-bg-layer-2); }
+    .musee-file input { display: none; }
 
     .musee-fulltext { font-size: 15px; line-height: 1.85; }
     .musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }
@@ -1573,6 +1581,8 @@ window.__ModuleLoader__.load({
         "reader.translationNote": "Machine translation of the full text. Figures, tables, and equations stay in the original view.",
         "reader.referencesOriginal": "References stay in the original view.",
         "reader.translateAllError": "Full-text translation stopped: {message}",
+        "reader.translatePartial": "{count} sections are still untranslated. The rest is kept; click Translate full text again to retry them.",
+        "reader.translateFailed": "Translation failed",
         "reader.annotations": "Annotations",
         "reader.noAnnotations": "Select text in the article to highlight it or attach a note.",
         "reader.annotationHint": "Highlights and notes are saved with this paper and included in Markdown export.",
@@ -1650,6 +1660,12 @@ window.__ModuleLoader__.load({
         "settings.languageHint": "Changes the Musée panel only; it does not switch the whole app.",
         "settings.appearance": "Appearance",
         "settings.appearanceHint": "Musée follows DSH’s light, dark, or system appearance. There is no separate theme switch.",
+        "settings.if": "Impact factors",
+        "settings.ifHint": "JCR Impact Factors are licensed data. Import your own JSON keyed by ISSN; without it, journal pages show OpenAlex two-year citedness instead.",
+        "settings.ifChoose": "Choose impact-factors.json",
+        "settings.ifImported": "Imported {count} ISSNs. Refresh the page to apply.",
+        "settings.ifError": "Import failed: {message}",
+        "settings.refresh": "Refresh page",
         "settings.translation": "Translation language",
         "settings.translationHint": "Titles and abstracts are translated into this language.",
         "settings.titles": "Title translation",
@@ -1769,6 +1785,8 @@ window.__ModuleLoader__.load({
         "reader.translationNote": "全文机器翻译；图、表、公式仍保留在原文视图。",
         "reader.referencesOriginal": "参考文献保留在原文视图。",
         "reader.translateAllError": "全文翻译中断：{message}",
+        "reader.translatePartial": "有 {count} 节没有完成，其余译文已保留；再点一次「翻译全文」只会重试这些章节。",
+        "reader.translateFailed": "翻译失败",
         "reader.annotations": "批注",
         "reader.noAnnotations": "在正文里选中文字，即可高亮或写批注。",
         "reader.annotationHint": "高亮和批注随论文保存，并会进入 Markdown 导出。",
@@ -1846,6 +1864,12 @@ window.__ModuleLoader__.load({
         "settings.languageHint": "只改变 Musée 面板，不切换整个应用的语言。",
         "settings.appearance": "外观",
         "settings.appearanceHint": "Musée 跟随 DSH 的浅色、深色或跟随系统设置，不单独维护主题开关。",
+        "settings.if": "影响因子",
+        "settings.ifHint": "JCR 影响因子是授权数据。在这里导入按 ISSN 索引的 JSON；没有导入时，期刊页显示 OpenAlex 两年平均被引。",
+        "settings.ifChoose": "选择 impact-factors.json",
+        "settings.ifImported": "已导入 {count} 个 ISSN，刷新页面后生效。",
+        "settings.ifError": "导入失败：{message}",
+        "settings.refresh": "刷新页面",
         "settings.translation": "翻译语言",
         "settings.translationHint": "标题与摘要会翻译成这个语言。",
         "settings.titles": "标题翻译",
@@ -1965,6 +1989,8 @@ window.__ModuleLoader__.load({
         "reader.translationNote": "Traduction automatique du texte intégral. Les figures, tableaux et équations restent dans la vue originale.",
         "reader.referencesOriginal": "Les références restent dans la vue originale.",
         "reader.translateAllError": "Traduction interrompue : {message}",
+        "reader.translatePartial": "{count} sections ne sont pas traduites. Le reste est conservé ; cliquez de nouveau sur « Traduire tout le texte » pour réessayer.",
+        "reader.translateFailed": "Échec de la traduction",
         "reader.annotations": "Annotations",
         "reader.noAnnotations": "Sélectionnez du texte dans l’article pour le surligner ou y joindre une note.",
         "reader.annotationHint": "Les surlignages et notes sont enregistrés avec l’article et inclus dans l’export Markdown.",
@@ -2042,6 +2068,12 @@ window.__ModuleLoader__.load({
         "settings.languageHint": "Modifie uniquement le panneau Musée, pas toute l’application.",
         "settings.appearance": "Apparence",
         "settings.appearanceHint": "Musée suit l’apparence claire, sombre ou système de DSH. Aucun réglage de thème séparé.",
+        "settings.if": "Facteurs d’impact",
+        "settings.ifHint": "Les facteurs d’impact JCR sont sous licence. Importez votre JSON indexé par ISSN ; sans lui, les pages de revue affichent les citations OpenAlex sur deux ans.",
+        "settings.ifChoose": "Choisir impact-factors.json",
+        "settings.ifImported": "{count} ISSN importés. Rechargez la page pour appliquer.",
+        "settings.ifError": "Échec de l’import : {message}",
+        "settings.refresh": "Recharger la page",
         "settings.translation": "Langue de traduction",
         "settings.translationHint": "Les titres et résumés sont traduits dans cette langue.",
         "settings.titles": "Traduction des titres",
@@ -2091,7 +2123,31 @@ window.__ModuleLoader__.load({
       }
 
       // src/client/settings.jsx
+      function tr2(t, key, params) {
+        return tFormat(t(key), params);
+      }
       function SettingsDialog({ t, lang, onLang, targetLang, onTarget, translateTitles, onTranslateTitles, version, dataDir, onClose }) {
+        const [ifState, setIfState] = useState({ busy: false, message: "", error: "" });
+        const importImpactFactors = async (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          setIfState({ busy: true, message: "", error: "" });
+          try {
+            const parsed = JSON.parse(await file.text());
+            const values = Array.isArray(parsed) ? parsed.map((entry) => ({
+              issn: entry?.issn || entry?.ISSN,
+              value: entry?.impactFactor ?? entry?.if ?? entry?.value
+            })) : parsed;
+            const result = await api.importImpactFactors(values);
+            setIfState({
+              busy: false,
+              message: tr2(t, "settings.ifImported", { count: result.count || 0 }),
+              error: ""
+            });
+          } catch (error) {
+            setIfState({ busy: false, message: "", error: tr2(t, "settings.ifError", { message: error.message || String(error) }) });
+          }
+        };
         return h(
           Modal,
           {
@@ -2174,6 +2230,32 @@ window.__ModuleLoader__.load({
                 }),
                 h("span", null, t("settings.titlesToggle"))
               )
+            ),
+            h(
+              "section",
+              { className: "musee-settings-section" },
+              h("h3", null, t("settings.if")),
+              h("p", { className: "musee-settings-hint" }, t("settings.ifHint")),
+              h(
+                "label",
+                { className: "musee-file" },
+                h("input", {
+                  type: "file",
+                  accept: ".json,application/json",
+                  onChange: importImpactFactors,
+                  disabled: ifState.busy
+                }),
+                ifState.busy ? t("loading") : t("settings.ifChoose")
+              ),
+              ifState.error ? h("p", { className: "musee-error" }, ifState.error) : null,
+              ifState.message ? h(
+                "p",
+                { className: "musee-settings-hint" },
+                ifState.message,
+                " ",
+                h("button", { type: "button", className: "musee-resume", onClick: () => window.location.reload() }, t("settings.refresh"))
+              ) : null,
+              dataDir ? h("p", { className: "musee-settings-hint" }, `${dataDir}\\impact-factors.json`) : null
             ),
             h(
               "section",
@@ -4261,7 +4343,7 @@ window.__ModuleLoader__.load({
         FORBID_ATTR: ["style"],
         ADD_ATTR: ["target", "rel"]
       };
-      function tr2(t, key, params) {
+      function tr3(t, key, params) {
         return tFormat(t(key), params);
       }
       var BLOCK_SELECTOR = "p, li, h1, h2, h3, h4, blockquote, figcaption, td";
@@ -4372,6 +4454,7 @@ window.__ModuleLoader__.load({
         const [fullTranslations, setFullTranslations] = useState({});
         const [fullProgress, setFullProgress] = useState({ done: 0, total: 0, active: false });
         const [fullError, setFullError] = useState("");
+        const [fullErrors, setFullErrors] = useState({});
         const [htmlAnnotations, setHtmlAnnotations] = useState(() => Array.isArray(item?.htmlAnnotations) ? item.htmlAnnotations : []);
         const [selection, setSelection] = useState(null);
         const [notesOpen, setNotesOpen] = useState(false);
@@ -4399,6 +4482,7 @@ window.__ModuleLoader__.load({
           setFullTranslations({});
           setFullProgress({ done: 0, total: 0, active: false });
           setFullError("");
+          setFullErrors({});
           stopFullRef.current = false;
           api.fulltext(paper).then((result) => {
             if (!alive) return;
@@ -4504,36 +4588,51 @@ window.__ModuleLoader__.load({
         useEffect(() => {
           setFullTranslations({});
           setViewMode("original");
+          setFullErrors({});
         }, [targetLang]);
         const translateAll = async () => {
           const sections = (data?.sections || []).filter((section) => section.text);
           if (!sections.length) return;
           stopFullRef.current = false;
           setFullError("");
+          setFullErrors({});
           setViewMode("translated");
-          setFullProgress({ done: 0, total: sections.length, active: true });
-          const results = { ...fullTranslations };
-          try {
-            for (let index = 0; index < sections.length; index += 1) {
-              if (stopFullRef.current) break;
+          const existing = { ...fullTranslations };
+          const errors = {};
+          let done = sections.filter((section) => existing[section.id]).length;
+          setFullProgress({ done, total: sections.length, active: true });
+          let cursor = 0;
+          const worker = async () => {
+            while (!stopFullRef.current) {
+              const index = cursor;
+              cursor += 1;
+              if (index >= sections.length) return;
               const section = sections[index];
-              if (!results[section.id]) {
+              if (existing[section.id]) continue;
+              try {
                 const parts = [];
-                for (const chunk of splitChunks(section.text)) {
+                for (const chunk of splitChunks(section.text, 4e3)) {
                   if (stopFullRef.current) break;
                   const result = await api.translateSection(section.title, chunk, targetLang);
                   parts.push(result.text);
                 }
-                if (!parts.length) break;
-                results[section.id] = parts.join("\n\n");
-                setFullTranslations({ ...results });
+                if (!parts.length) throw new Error("这一节没有返回译文");
+                existing[section.id] = parts.join("\n\n");
+                setFullTranslations({ ...existing });
+              } catch (reason) {
+                errors[section.id] = reason?.message || String(reason);
+                setFullErrors({ ...errors });
+              } finally {
+                done += 1;
+                setFullProgress({ done, total: sections.length, active: !stopFullRef.current });
               }
-              setFullProgress({ done: index + 1, total: sections.length, active: true });
             }
-          } catch (reason) {
-            setFullError(tr2(t, "reader.translateAllError", { message: reason.message || String(reason) }));
-          } finally {
-            setFullProgress((current) => ({ ...current, active: false }));
+          };
+          await Promise.all([worker(), worker()]);
+          setFullProgress((current) => ({ ...current, active: false }));
+          const failed = Object.keys(errors).length;
+          if (failed) {
+            setFullError(tr3(t, "reader.translatePartial", { count: failed }));
           }
         };
         const stopFull = () => {
@@ -4683,7 +4782,7 @@ window.__ModuleLoader__.load({
               Button,
               { size: "sm", onClick: stopFull },
               h(Spinner),
-              tr2(t, "reader.translatingAll", { done: fullProgress.done, total: fullProgress.total })
+              tr3(t, "reader.translatingAll", { done: fullProgress.done, total: fullProgress.total })
             ) : h(
               Button,
               { size: "sm", onClick: translateAll, disabled: translating || !(data.sections || []).length },
@@ -4717,7 +4816,7 @@ window.__ModuleLoader__.load({
             "div",
             { className: "musee-reader" },
             header,
-            h("div", { className: "musee-page" }, h(ErrorBanner, { message: tr2(t, "reader.error", { message: error }) }))
+            h("div", { className: "musee-page" }, h(ErrorBanner, { message: tr3(t, "reader.error", { message: error }) }))
           );
         }
         if (!data?.available) {
@@ -4788,7 +4887,7 @@ window.__ModuleLoader__.load({
                       "section",
                       { key: section.id, id: section.id, className: "musee-translated-section" },
                       h("h2", null, section.title),
-                      fullTranslations[section.id] ? fullTranslations[section.id].split(/\n{2,}/).map((paragraph, index) => h("p", { key: index }, paragraph)) : h("p", { className: "musee-reader-placeholder" }, fullProgress.active ? t("loading") : t("reader.translateAll"))
+                      fullTranslations[section.id] ? fullTranslations[section.id].split(/\n{2,}/).map((paragraph, index) => h("p", { key: index }, paragraph)) : fullErrors[section.id] ? h("p", { className: "musee-reader-placeholder" }, `${t("reader.translateFailed")}：${fullErrors[section.id]}`) : h("p", { className: "musee-reader-placeholder" }, fullProgress.active ? t("loading") : t("reader.translateAll"))
                     )
                   ),
                   h("p", { className: "musee-reader-note" }, t("reader.referencesOriginal"))
@@ -5067,7 +5166,7 @@ window.__ModuleLoader__.load({
       }
 
       // src/client/pdf.jsx
-      function tr3(t, key, params) {
+      function tr4(t, key, params) {
         return tFormat(t(key), params);
       }
       function newId2() {
@@ -5318,7 +5417,7 @@ window.__ModuleLoader__.load({
           h("div", { className: "musee-reader-title" }, paper.title),
           h("div", { style: { flex: 1 } }),
           h(Button, { size: "sm", onClick: () => goPage(pageNumber - 1), disabled: pageNumber <= 1, "aria-label": t("pdf.prev") }, "‹"),
-          h("span", { className: "musee-pdf-pageinfo" }, tr3(t, "pdf.pageOf", { n: pageNumber, total: pageCount || "—" })),
+          h("span", { className: "musee-pdf-pageinfo" }, tr4(t, "pdf.pageOf", { n: pageNumber, total: pageCount || "—" })),
           h(Button, { size: "sm", onClick: () => goPage(pageNumber + 1), disabled: pageNumber >= pageCount, "aria-label": t("pdf.next") }, "›"),
           h(Button, { size: "sm", onClick: () => setScale((value) => Math.max(0.5, Number((value - 0.15).toFixed(2)))), "aria-label": t("pdf.zoomOut") }, "−"),
           h("span", { className: "musee-pdf-zoom" }, `${Math.round(scale * 100)}%`),
@@ -5329,7 +5428,7 @@ window.__ModuleLoader__.load({
           return h("div", { className: "musee-pdf-view" }, header, h("div", { className: "musee-page" }, h(Loading, { label: t("pdf.loading") })));
         }
         if (status === "error") {
-          return h("div", { className: "musee-pdf-view" }, header, h("div", { className: "musee-page" }, h(ErrorBanner, { message: tr3(t, "pdf.error", { message: error }) })));
+          return h("div", { className: "musee-pdf-view" }, header, h("div", { className: "musee-page" }, h(ErrorBanner, { message: tr4(t, "pdf.error", { message: error }) })));
         }
         return h(
           "div",
@@ -5438,7 +5537,7 @@ window.__ModuleLoader__.load({
       }
 
       // src/client/app.jsx
-      function tr4(t, key, params) {
+      function tr5(t, key, params) {
         return tFormat(t(key), params);
       }
       function disciplineName(discipline, lang) {
@@ -5642,7 +5741,7 @@ window.__ModuleLoader__.load({
         const openArxiv = (category) => {
           setView({ kind: "arxiv", category });
           setSourceInfo(null);
-          loadList(() => api.arxiv(category), tr4(t, "arxiv.title", { category }));
+          loadList(() => api.arxiv(category), tr5(t, "arxiv.title", { category }));
         };
         const runSearch = (text2) => {
           const q = String(text2 || "").trim();
@@ -5650,7 +5749,7 @@ window.__ModuleLoader__.load({
           setQuery(q);
           setView({ kind: "search", q });
           setSourceInfo(null);
-          loadList(() => api.search(q), tr4(t, "search.title", { q }));
+          loadList(() => api.search(q), tr5(t, "search.title", { q }));
         };
         const openPaper = (paper) => {
           if (view.kind !== "paper") setPaperFrom(view);
@@ -5739,7 +5838,7 @@ window.__ModuleLoader__.load({
             translationsRef.current.set(paper.id, data);
             setTranslation(data);
           } catch (error) {
-            showToast(tr4(t, "toast.translateFailed", { message: errorText(error) }));
+            showToast(tr5(t, "toast.translateFailed", { message: errorText(error) }));
           } finally {
             setTranslating(false);
           }
@@ -5798,7 +5897,7 @@ window.__ModuleLoader__.load({
                   `${t("metrics.twoYear")} ${Number(options.metrics.twoYearMeanCitedness).toFixed(1)}`
                 ) : null,
                 options.metrics?.hIndex ? h("span", null, `${t("metrics.hIndex")} ${options.metrics.hIndex}`) : null,
-                options.worksCount ? h("span", null, tr4(t, "journal.works", { n: options.worksCount.toLocaleString() })) : null,
+                options.worksCount ? h("span", null, tr5(t, "journal.works", { n: options.worksCount.toLocaleString() })) : null,
                 options.isOa ? h(Pill, { tone: "success" }, t("journal.oa")) : null,
                 kind === "conference" ? h(Pill, { tone: "brand" }, t(venue.group === "robotics" ? "conference.group.robotics" : "conference.group.ai")) : null,
                 options.homepage ? h("a", { href: options.homepage, target: "_blank", rel: "noreferrer" }, `${t("journal.officialSite")} ↗`) : null
@@ -6044,7 +6143,7 @@ window.__ModuleLoader__.load({
                 "div",
                 { className: "musee-section-head", style: { marginTop: "20px", gap: "12px", flexWrap: "wrap" } },
                 h("h2", null, journalYear ? String(journalYear) : t("journal.papers")),
-                journalTotal ? h("span", null, tr4(t, "journal.total", { n: journalTotal.toLocaleString() })) : null,
+                journalTotal ? h("span", null, tr5(t, "journal.total", { n: journalTotal.toLocaleString() })) : null,
                 h("div", { style: { flex: 1 } }),
                 journalYears.length ? h(
                   "select",

@@ -24,7 +24,7 @@ Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - **PMC 开放全文**：没有 arXiv 但 DOI 对应 Europe PMC 开放全文的论文（生物医学等），也会自动抓取 JATS 正文；图、表暂以文字说明呈现。
 - **全文批注**：HTML 阅读器里选中文字即可高亮或写批注，按块级段落锚点保存，刷新/重开仍在，并进入 Markdown 导出。
 - **阅读进度**：自动记住上次读到的章节，论文详情显示「上次读到」，重开全文自动回到该节。
-- **全文翻译**：阅读器里一键「翻译全文」，按章节分批翻译并显示进度，可随时停止；译文视图按章节排列，原文视图保留图、表、公式与参考文献。结果按段落缓存，重复打开不再重复计费。
+- **全文翻译**：阅读器里一键「翻译全文」，按章节分批翻译并显示进度，可随时停止；译文视图按章节排列，原文视图保留图、表、公式与参考文献。结果按段落缓存，重复打开不再重复计费。两节并行翻译；某节失败会保留其余译文并继续，再次点击只重试失败章节。
 - **与 DSH 同步的外观**：颜色走 DSH 的 `--dsw-*` token，跟随 DSH 的浅色、深色或“跟随系统”设置；编辑式红色强调在深浅色下自动调整明度，PDF 纸张保持原色。
 - **顶会论文**：NeurIPS、CVPR、ICCV、AAAI、IJCAI、ACL、EMNLP、KDD、ICRA、IROS、RSS，来自 OpenAlex 会议论文集。
 - **arXiv 预印本**：按 `cs.RO`、`cs.AI`、`quant-ph`、`hep-th`、`physics.soc-ph` 等分类看最新提交。
@@ -86,7 +86,7 @@ Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 
 ### 本地导入影响因子
 
-JCR 影响因子是 Clarivate 的版权数据，Musée 不内置、也不抓取。若你已有授权数据，可在 `~/.dsh/musee/impact-factors.json` 按 ISSN 写入：
+JCR 影响因子是 Clarivate 的版权数据，Musée 不内置、也不抓取。若你已有授权数据，可在 `~/.dsh/musee/impact-factors.json` 按 ISSN 写入，或在 Musée 设置 →「影响因子」直接导入该 JSON：
 
 ```json
 {

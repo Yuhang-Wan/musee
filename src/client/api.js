@@ -70,6 +70,8 @@ export const api = {
     return request(`/fulltext?${params.toString()}`);
   },
   preferences: () => request('/preferences'),
+  importImpactFactors: (values) =>
+    request('/impact-factors', { method: 'POST', body: { values } }),
   follow: (journalId, follow) =>
     request('/preferences', { method: 'POST', body: { action: follow ? 'follow' : 'unfollow', journalId } }),
   home: () => request('/home'),

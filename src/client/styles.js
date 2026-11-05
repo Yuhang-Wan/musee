@@ -463,6 +463,13 @@ export const CSS = `
 .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
 .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 .musee-resume { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: var(--musee-accent); font-size: 11.5px; cursor: pointer; }
+.musee-file {
+  display: inline-flex; align-items: center; gap: 6px; margin: 4px 0;
+  padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 7px;
+  color: var(--dsw-alias-label-primary); font-size: 12px; cursor: pointer;
+}
+.musee-file:hover { background: var(--dsw-alias-bg-layer-2); }
+.musee-file input { display: none; }
 
 .musee-fulltext { font-size: 15px; line-height: 1.85; }
 .musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }

@@ -137,6 +137,7 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
   const [fullTranslations, setFullTranslations] = useState({});
   const [fullProgress, setFullProgress] = useState({ done: 0, total: 0, active: false });
   const [fullError, setFullError] = useState('');
+  const [fullErrors, setFullErrors] = useState({});
   const [htmlAnnotations, setHtmlAnnotations] = useState(() => (Array.isArray(item?.htmlAnnotations) ? item.htmlAnnotations : []));
   const [selection, setSelection] = useState(null);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -165,6 +166,7 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
     setFullTranslations({});
     setFullProgress({ done: 0, total: 0, active: false });
     setFullError('');
+    setFullErrors({});
     stopFullRef.current = false;
     api
       .fulltext(paper)
@@ -284,6 +286,7 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
   useEffect(() => {
     setFullTranslations({});
     setViewMode('original');
+    setFullErrors({});
   }, [targetLang]);
 
   const translateAll = async () => {
@@ -291,30 +294,44 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
     if (!sections.length) return;
     stopFullRef.current = false;
     setFullError('');
+    setFullErrors({});
     setViewMode('translated');
-    setFullProgress({ done: 0, total: sections.length, active: true });
-    const results = { ...fullTranslations };
-    try {
-      for (let index = 0; index < sections.length; index += 1) {
-        if (stopFullRef.current) break;
+    const existing = { ...fullTranslations };
+    const errors = {};
+    let done = sections.filter((section) => existing[section.id]).length;
+    setFullProgress({ done, total: sections.length, active: true });
+    let cursor = 0;
+    const worker = async () => {
+      while (!stopFullRef.current) {
+        const index = cursor;
+        cursor += 1;
+        if (index >= sections.length) return;
         const section = sections[index];
-        if (!results[section.id]) {
+        if (existing[section.id]) continue;
+        try {
           const parts = [];
-          for (const chunk of splitChunks(section.text)) {
+          for (const chunk of splitChunks(section.text, 4000)) {
             if (stopFullRef.current) break;
             const result = await api.translateSection(section.title, chunk, targetLang);
             parts.push(result.text);
           }
-          if (!parts.length) break;
-          results[section.id] = parts.join('\n\n');
-          setFullTranslations({ ...results });
+          if (!parts.length) throw new Error('这一节没有返回译文');
+          existing[section.id] = parts.join('\n\n');
+          setFullTranslations({ ...existing });
+        } catch (reason) {
+          errors[section.id] = reason?.message || String(reason);
+          setFullErrors({ ...errors });
+        } finally {
+          done += 1;
+          setFullProgress({ done, total: sections.length, active: !stopFullRef.current });
         }
-        setFullProgress({ done: index + 1, total: sections.length, active: true });
       }
-    } catch (reason) {
-      setFullError(tr(t, 'reader.translateAllError', { message: reason.message || String(reason) }));
-    } finally {
-      setFullProgress((current) => ({ ...current, active: false }));
+    };
+    await Promise.all([worker(), worker()]);
+    setFullProgress((current) => ({ ...current, active: false }));
+    const failed = Object.keys(errors).length;
+    if (failed) {
+      setFullError(tr(t, 'reader.translatePartial', { count: failed }));
     }
   };
 
@@ -614,7 +631,9 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
                       ? fullTranslations[section.id]
                           .split(/\n{2,}/)
                           .map((paragraph, index) => h('p', { key: index }, paragraph))
-                      : h('p', { className: 'musee-reader-placeholder' }, fullProgress.active ? t('loading') : t('reader.translateAll')),
+                      : fullErrors[section.id]
+                        ? h('p', { className: 'musee-reader-placeholder' }, `${t('reader.translateFailed')}：${fullErrors[section.id]}`)
+                        : h('p', { className: 'musee-reader-placeholder' }, fullProgress.active ? t('loading') : t('reader.translateAll')),
                   ),
                 ),
                 h('p', { className: 'musee-reader-note' }, t('reader.referencesOriginal')),

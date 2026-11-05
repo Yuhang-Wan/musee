@@ -272,6 +272,13 @@ export function createMusee(ctx, config = {}) {
       return json({ journals: feed });
     }
 
+    if (pathname === '/impact-factors' && request.method === 'POST') {
+      const body = await request.json();
+      const values = body?.values ?? body;
+      const result = await store.setImpactFactors(values);
+      return json(result);
+    }
+
     if (pathname === '/preferences') {
       if (request.method === 'GET') return json({ followedJournals: store.followedJournals() });
       if (request.method === 'POST') {
