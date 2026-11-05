@@ -1,6 +1,6 @@
 import { digest } from './util.js';
 
-const SYSTEM_PROMPT = `你是一位以中文为母语的学术译者，长期翻译城市研究、物理学、人工智能与机器人学领域的论文。请把用户给出的英文标题与摘要译成规范、地道的学术中文。
+const SYSTEM_ZH = `你是一位以中文为母语的学术译者，长期翻译城市研究、物理学、人工智能与机器人学领域的论文。请把用户给出的英文标题与摘要译成规范、地道的学术中文。
 
 要求：
 1. 使用书面学术语体，术语准确且前后一致；关键术语首次出现时可在括号内保留英文，例如“具身智能（embodied intelligence）”。
@@ -13,6 +13,20 @@ const SYSTEM_PROMPT = `你是一位以中文为母语的学术译者，长期翻
 
 ### ABSTRACT
 中文摘要`;
+
+const SYSTEM_FR = `Vous êtes un traducteur académique francophone spécialisé en études urbaines, physique, intelligence artificielle et robotique. Traduisez le titre et le résumé fournis en un français académique naturel.
+
+Consignes :
+1. Registre soutenu et terminologie précise, employée de façon cohérente ; à la première occurrence, un terme technique peut être suivi de l’anglais entre parenthèses.
+2. N’ajoutez ni ne retirez aucune information ; ne commentez pas et n’ajoutez pas d’introduction. Conservez les chiffres, unités, formules, noms de variables, appels de citation (par exemple [12]), numéros de figures et noms propres.
+3. Recomposez les phrases longues selon la syntaxe française ; évitez le mot-à-mot et le registre familier.
+4. Respectez strictement le format suivant, sans aucun autre texte :
+
+### TITLE
+Titre en français
+
+### ABSTRACT
+Résumé en français`;
 
 function stripFences(text = '') {
   return String(text)
@@ -46,17 +60,18 @@ export function createTranslator({ ctx, config, cache }) {
     return Boolean(ctx.get('llm')) && Boolean(selection());
   }
 
-  async function translate({ title, abstract }) {
+  async function translate({ title, abstract, lang = 'zh' }) {
     const llm = ctx.get('llm');
     if (!llm) throw new Error('当前 profile 没有可用的模型服务，无法翻译。');
     const route = selection();
     if (!route) throw new Error('尚未选择翻译模型：请在插件配置里设置 llmProvider / llmModel。');
 
+    const target = lang === 'fr' ? 'fr' : 'zh';
     const sourceTitle = String(title || '').trim();
     const sourceAbstract = String(abstract || '').trim();
     if (!sourceTitle && !sourceAbstract) throw new Error('这篇论文没有可翻译的标题或摘要。');
 
-    const key = digest(`${route.provider}/${route.model}\n${sourceTitle}\n${sourceAbstract}`);
+    const key = digest(`${target}\n${route.provider}/${route.model}\n${sourceTitle}\n${sourceAbstract}`);
     const cached = cache.get(key);
     if (cached) return { ...cached, cached: true };
 
@@ -84,7 +99,7 @@ export function createTranslator({ ctx, config, cache }) {
       const chunks = streamCall({
         ...callConfig,
         messages,
-        system: SYSTEM_PROMPT,
+        system: target === 'fr' ? SYSTEM_FR : SYSTEM_ZH,
         signal: controller.signal,
       });
       for await (const chunk of chunks) {
@@ -105,6 +120,7 @@ export function createTranslator({ ctx, config, cache }) {
     const result = {
       title: parsed.title || sourceTitle,
       abstract: parsed.abstract || '',
+      lang: target,
       model: `${route.provider}/${route.model}`,
       at: Date.now(),
     };

@@ -50,6 +50,7 @@ export function normalizeWork(work) {
   return {
     id: doi ? `doi:${doi.toLowerCase()}` : `openalex:${openAlexId(work.id)}`,
     source: 'openalex',
+    kind: source?.type === 'conference' ? 'conference' : 'journal',
     title: cleanText(work.title || work.display_name || ''),
     abstract: abstractFromIndex(work.abstract_inverted_index),
     authors,
@@ -93,6 +94,23 @@ export async function worksBySource(sourceId, { limit = 20, offset = 0, mailto =
   });
   const data = await fetchJson(url);
   return (data.results || []).map(normalizeWork).filter((paper) => paper.title);
+}
+
+export async function fetchSource(sourceId, { mailto = '' } = {}) {
+  const url = `https://api.openalex.org/sources/${sourceId}${mailto ? `?mailto=${encodeURIComponent(mailto)}` : ''}`;
+  const data = await fetchJson(url);
+  return {
+    id: openAlexId(data.id),
+    name: data.display_name || '',
+    type: data.type || '',
+    homepage: data.homepage_url || '',
+    worksCount: data.works_count || 0,
+    citedBy: data.cited_by_count || 0,
+    isOa: Boolean(data.is_oa),
+    issn: data.issn_l || '',
+    firstYear: data.first_publication_year || null,
+    lastYear: data.last_publication_year || null,
+  };
 }
 
 export async function searchWorks(query, { limit = 20, mailto = '' } = {}) {

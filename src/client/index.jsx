@@ -1,15 +1,31 @@
-import { h, useMemo, useSyncExternalStore } from './react.js';
+import { h, useMemo, useState } from './react.js';
 import { App } from './app.jsx';
-import { EN, ZH } from './locale.js';
+import { makeT, readStoredLang, readStoredTarget } from './i18n.js';
 
 function createPanel(ctx) {
   return function MuseePanel() {
-    const snapshot = useSyncExternalStore(
-      (callback) => ctx.locale.subscribe(callback),
-      () => ctx.locale.getSnapshot(),
-    );
-    const t = useMemo(() => ctx.locale.bind('musee'), []);
-    return h(App, { t, locale: snapshot.active });
+    const [lang, setLangState] = useState(() => readStoredLang(ctx));
+    const [targetLang, setTargetLangState] = useState(() => readStoredTarget(readStoredLang(ctx)));
+    const t = useMemo(() => makeT(lang), [lang]);
+
+    const setLang = (next) => {
+      try {
+        localStorage.setItem('musee.lang', next);
+      } catch {
+        /* ignore unavailable storage */
+      }
+      setLangState(next);
+    };
+    const setTargetLang = (next) => {
+      try {
+        localStorage.setItem('musee.target', next);
+      } catch {
+        /* ignore unavailable storage */
+      }
+      setTargetLangState(next);
+    };
+
+    return h(App, { t, lang, setLang, targetLang, setTargetLang });
   };
 }
 
@@ -35,11 +51,8 @@ function MuseeIcon({ size = 18, active = false }) {
 }
 
 const plugin = {
-  inject: ['slots', 'locale'],
+  inject: ['slots'],
   apply(ctx) {
-    ctx.effect(() => ctx.locale.register('musee', 'zh', ZH), 'musee: locale zh');
-    ctx.effect(() => ctx.locale.register('musee', 'en', EN), 'musee: locale en');
-
     const Panel = createPanel(ctx);
     ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: 'musee' }, Panel));
     ctx.slots.inject('sidebar.panellist', () =>

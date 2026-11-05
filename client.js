@@ -59,9 +59,10 @@ window.__ModuleLoader__.load({
         bootstrap: () => request("/bootstrap"),
         library: () => request("/library"),
         journal: (journalId, limit = 20) => request(`/journal?journalId=${encodeURIComponent(journalId)}&limit=${limit}`),
+        conference: (conferenceId, limit = 20) => request(`/conference?conferenceId=${encodeURIComponent(conferenceId)}&limit=${limit}`),
         arxiv: (category, limit = 20) => request(`/arxiv?category=${encodeURIComponent(category)}&limit=${limit}`),
         search: (query, limit = 20) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
-        translate: (title, abstract) => request("/translate", { method: "POST", body: { title, abstract } }),
+        translate: (title, abstract, lang) => request("/translate", { method: "POST", body: { title, abstract, lang } }),
         save: (paper) => request("/library", { method: "POST", body: { action: "save", paper } }),
         update: (id, patch) => request("/library", { method: "POST", body: { action: "update", id, patch } }),
         remove: (id) => request("/library", { method: "POST", body: { action: "remove", id } }),
@@ -353,6 +354,128 @@ window.__ModuleLoader__.load({
     .musee-rail { scrollbar-width: thin; scrollbar-color: var(--dsw-alias-border-l1) transparent; }
     .musee-main { scrollbar-width: thin; scrollbar-color: var(--dsw-alias-border-l1) transparent; }
 
+    .musee-cover {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 0 0 auto;
+      overflow: hidden;
+      padding: 8px 9px 8px 13px;
+      border-radius: 3px 7px 7px 3px;
+      background: linear-gradient(150deg, var(--cover-from), var(--cover-to));
+      color: #fff;
+      box-shadow: 0 7px 18px rgba(15, 23, 42, .22), inset 0 1px 0 rgba(255, 255, 255, .18);
+    }
+    .musee-cover-spine {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(90deg, rgba(0, 0, 0, .38), rgba(255, 255, 255, .12));
+    }
+    .musee-cover-glow {
+      position: absolute;
+      width: 120%;
+      height: 70%;
+      right: -30%;
+      top: -20%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, .28), transparent 65%);
+    }
+    .musee-cover-short {
+      position: relative;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700;
+      letter-spacing: .03em;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    }
+    .musee-cover-name {
+      position: relative;
+      font-size: 7px;
+      line-height: 1.25;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      opacity: .82;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .musee-cover-foot {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 6px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .85;
+      white-space: nowrap;
+    }
+    .musee-cover-mark { opacity: .7; }
+    .musee-cover-sm { width: 60px; height: 80px; padding: 6px 7px 6px 11px; }
+    .musee-cover-sm .musee-cover-short { font-size: 17px; }
+    .musee-cover-sm .musee-cover-name { display: none; }
+    .musee-cover-sm .musee-cover-foot { font-size: 5px; }
+    .musee-cover-md { width: 78px; height: 104px; }
+    .musee-cover-md .musee-cover-short { font-size: 22px; }
+    .musee-cover-lg { width: 116px; height: 154px; padding: 11px 12px 11px 17px; }
+    .musee-cover-lg .musee-cover-short { font-size: 34px; }
+    .musee-cover-lg .musee-cover-name { font-size: 8px; }
+    .musee-cover-lg .musee-cover-foot { font-size: 7px; }
+
+    .musee-journal-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      text-align: left;
+      border: 1px solid var(--dsw-alias-border-l1);
+      border-radius: 12px;
+      background: var(--dsw-alias-bg-layer-1);
+      padding: 13px;
+      cursor: pointer;
+      min-width: 0;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .musee-journal-card:hover { border-color: var(--dsw-alias-border-l2); transform: translateY(-1px); }
+    .musee-journal-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .musee-journal-name { font-weight: 650; line-height: 1.35; }
+    .musee-journal-local { font-size: 12px; color: var(--dsw-alias-label-secondary); line-height: 1.4; }
+    .musee-journal-about {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--dsw-alias-label-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .musee-journal-meta { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; color: var(--dsw-alias-label-secondary); font-size: 11px; }
+
+    .musee-venue-head { display: flex; gap: 22px; align-items: flex-start; margin-top: 14px; }
+    .musee-venue-head h1 { margin: 0 0 4px; font-size: 27px; line-height: 1.3; letter-spacing: -0.012em; }
+    .musee-venue-local { color: var(--dsw-alias-label-secondary); font-size: 14px; margin-bottom: 8px; }
+    .musee-venue-about { margin: 0; max-width: 660px; color: var(--dsw-alias-label-secondary); font-size: 13.5px; line-height: 1.7; }
+    .musee-venue-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; color: var(--dsw-alias-label-secondary); font-size: 12px; }
+
+    .musee-settings-section { padding: 2px 0 16px; border-bottom: 1px solid var(--dsw-alias-border-l1); margin-bottom: 16px; }
+    .musee-settings-section:last-child { border-bottom: 0; margin-bottom: 0; }
+    .musee-settings-section h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+    .musee-settings-hint { margin: 0 0 10px; color: var(--dsw-alias-label-secondary); font-size: 12px; line-height: 1.6; }
+    .musee-settings-meta { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 10px; font-size: 12px; }
+    .musee-settings-meta dt { color: var(--dsw-alias-label-secondary); }
+    .musee-settings-meta dd { margin: 0; word-break: break-all; }
+
+    .musee-icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border: 1px solid transparent; border-radius: 8px;
+      background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer;
+    }
+    .musee-icon-btn:hover { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); }
+
+
     @media (max-width: 920px) {
       .musee-rail { display: none; }
       .musee-page { padding: 20px 18px 70px; }
@@ -491,6 +614,14 @@ window.__ModuleLoader__.load({
           h("path", { d: "M6 6l12 12M18 6 6 18" })
         );
       }
+      function IconSettings({ size = 16 }) {
+        return h(
+          "svg",
+          { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+          h("circle", { cx: 12, cy: 12, r: 3.2 }),
+          h("path", { d: "M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" })
+        );
+      }
 
       // src/client/paper.jsx
       function tr(t, key, params) {
@@ -514,6 +645,7 @@ window.__ModuleLoader__.load({
               h(
                 "div",
                 { className: "musee-paper-meta" },
+                paper.kind === "conference" ? h(Pill, { tone: "brand" }, t("paper.conference")) : null,
                 paper.journal?.name ? h("span", null, paper.journal.name) : paper.source === "arxiv" ? h(Pill, { tone: "brand" }, "arXiv") : null,
                 paper.year ? h("span", null, String(paper.year)) : null,
                 paper.authors?.length ? h("span", null, shortAuthors(paper.authors)) : null,
@@ -601,6 +733,7 @@ window.__ModuleLoader__.load({
           h(
             "div",
             { className: "musee-meta-line" },
+            paper.kind === "conference" ? h(Pill, { tone: "brand" }, t("paper.conference")) : null,
             paper.journal?.name ? h("span", null, paper.journal.name) : paper.source === "arxiv" ? h(Pill, { tone: "brand" }, "arXiv") : null,
             paper.year ? h("span", null, String(paper.year)) : null,
             paper.volume ? h("span", null, `${t("paper.volume")} ${paper.volume}`) : null,
@@ -922,19 +1055,542 @@ window.__ModuleLoader__.load({
         );
       }
 
+      // src/client/cover.jsx
+      var PALETTES = {
+        urban: [
+          ["#0b3b36", "#d97706"],
+          ["#123f3a", "#65a30d"],
+          ["#3f2d1e", "#ca8a04"]
+        ],
+        physics: [
+          ["#111c44", "#6d28d9"],
+          ["#1e1b4b", "#0e7490"],
+          ["#2e1065", "#be185d"]
+        ],
+        ai: [
+          ["#102a6b", "#0891b2"],
+          ["#0b1220", "#2563eb"],
+          ["#083344", "#0e7490"]
+        ],
+        conference: [
+          ["#0b1120", "#dc2626"],
+          ["#111827", "#d97706"],
+          ["#071a2b", "#0e7490"]
+        ]
+      };
+      function hash(value = "") {
+        let result = 0;
+        for (let index = 0; index < value.length; index += 1) {
+          result = result * 31 + value.charCodeAt(index) >>> 0;
+        }
+        return result;
+      }
+      function paletteFor(kind, id) {
+        const family = PALETTES[kind] || PALETTES.ai;
+        return family[hash(id) % family.length];
+      }
+      function JournalCover({ venue, kind = "journal", size = "md", issue = "" }) {
+        const [from, to] = paletteFor(kind === "conference" ? "conference" : kind, venue?.id || venue?.name || "");
+        const short = venue?.short || "M";
+        return h(
+          "div",
+          {
+            className: `musee-cover musee-cover-${size}`,
+            style: { "--cover-from": from, "--cover-to": to },
+            "aria-hidden": "true"
+          },
+          h("span", { className: "musee-cover-spine" }),
+          h("span", { className: "musee-cover-glow" }),
+          h("span", { className: "musee-cover-short" }, short),
+          h("span", { className: "musee-cover-name" }, venue?.name || ""),
+          h(
+            "span",
+            { className: "musee-cover-foot" },
+            h("span", null, issue || "LATEST"),
+            h("span", { className: "musee-cover-mark" }, "MUSEE")
+          )
+        );
+      }
+
+      // src/client/i18n.js
+      var LANGUAGES = [
+        { id: "en", label: "English" },
+        { id: "zh", label: "中文" },
+        { id: "fr", label: "Français" }
+      ];
+      var EN = {
+        brand: "Musee",
+        tagline: "A reading desk for journals and preprints",
+        "nav.discover": "Discover",
+        "nav.conferences": "Conferences",
+        "nav.library": "Library",
+        "search.placeholder": "Search papers, authors, topics…",
+        "search.title": "Search: {q}",
+        "search.empty": "No matching papers. Try another keyword.",
+        "discover.title": "Browse by field",
+        "discover.subtitle": "Journals, top conferences, and arXiv preprints. Data from OpenAlex and arXiv.",
+        "discover.arxiv": "Latest on arXiv",
+        "discover.journals": "Journals",
+        "discover.conferences": "Top conferences",
+        "discover.conferencesHint": "Proceedings indexed by OpenAlex; coverage varies by venue.",
+        "journal.back": "Back to journals",
+        "journal.loading": "Fetching the latest papers…",
+        "journal.empty": "This venue returned no papers.",
+        "journal.about": "About",
+        "journal.officialSite": "Publisher site",
+        "journal.works": "{n} works indexed",
+        "journal.oa": "Open access",
+        "journal.latest": "Latest issue",
+        "paper.back": "Back to list",
+        "paper.translate": "Academic translation",
+        "paper.translating": "Translating…",
+        "paper.translated": "Translation",
+        "paper.original": "Original",
+        "paper.both": "Side by side",
+        "paper.save": "Save",
+        "paper.saved": "Saved",
+        "paper.cite": "Cite",
+        "paper.open": "Open source",
+        "paper.notes": "Reading notes",
+        "paper.notesHint": "Save the paper to keep notes, status, and tags.",
+        "paper.status": "Status",
+        "paper.tags": "Tags",
+        "paper.tagsHint": "Comma separated, e.g. methods, review",
+        "paper.abstract": "Abstract",
+        "paper.noAbstract": "No abstract is available for this record.",
+        "paper.meta": "Publication",
+        "paper.doi": "DOI",
+        "paper.issn": "ISSN",
+        "paper.cited": "Cited by {n}",
+        "paper.oa": "Open access",
+        "paper.preprint": "Preprint",
+        "paper.conference": "Conference paper",
+        "paper.journalPaper": "Journal article",
+        "paper.authors": "Authors",
+        "paper.journal": "Venue",
+        "paper.year": "Year",
+        "paper.volume": "Volume",
+        "paper.issue": "Issue",
+        "paper.pages": "Pages",
+        "status.unread": "To read",
+        "status.reading": "Reading",
+        "status.read": "Read",
+        "library.title": "My library",
+        "library.subtitle": "Saved papers, reading status, and notes. Select several for batch citations.",
+        "library.empty": "Nothing saved yet. Use Save on a paper to collect it here.",
+        "library.selected": "{n} selected",
+        "library.selectAll": "Select all",
+        "library.clear": "Clear",
+        "library.cite": "Cite selected",
+        "library.exportBibtex": "Export BibTeX",
+        "library.exportRis": "Export RIS",
+        "library.exportMd": "Export Markdown",
+        "library.remove": "Remove",
+        "library.notesCount": "{n} characters of notes",
+        "library.filterAll": "All",
+        "citation.title": "Citation",
+        "citation.titleBatch": "Cite {n} papers",
+        "citation.copy": "Copy",
+        "citation.copied": "Copied",
+        "citation.close": "Close",
+        "citation.format.gb": "GB/T 7714",
+        "citation.format.apa": "APA 7",
+        "citation.format.mla": "MLA 9",
+        "citation.format.ieee": "IEEE",
+        "citation.format.bibtex": "BibTeX",
+        "citation.format.ris": "RIS",
+        "toast.saved": "Added to your library",
+        "toast.removed": "Removed from your library",
+        "toast.updated": "Saved",
+        "toast.exported": "Exported",
+        "toast.translateFailed": "Translation failed: {message}",
+        "error.noToken": "Musee is not ready: refresh the page and try again.",
+        "error.refresh": "Refresh page",
+        "error.load": "Failed to load: {message}",
+        "error.retry": "Retry",
+        loading: "Loading…",
+        "arxiv.title": "arXiv · {category}",
+        "arxiv.hint": "Latest submissions",
+        "conference.back": "Back to conferences",
+        "conference.about": "About this venue",
+        "conference.latest": "Recent papers",
+        "conference.dataNote": "Indexed from OpenAlex proceedings; some venues publish primarily through OpenReview or their own site and may be incomplete.",
+        "conference.group.ai": "AI",
+        "conference.group.robotics": "Robotics",
+        "settings.title": "Settings",
+        "settings.language": "Language",
+        "settings.languageHint": "Changes the Musee panel only; it does not switch the whole app.",
+        "settings.translation": "Translation language",
+        "settings.translationHint": "Titles and abstracts are translated into this language.",
+        "settings.about": "About",
+        "settings.version": "Version",
+        "settings.dataDir": "Local data",
+        "settings.note": "Musee stores your library and cached translations locally. No account, no server, no telemetry.",
+        "settings.close": "Close",
+        "common.close": "Close",
+        "common.cancel": "Cancel",
+        empty: "Nothing here yet"
+      };
+      var ZH = {
+        brand: "Musee",
+        tagline: "期刊与预印本阅读台",
+        "nav.discover": "发现",
+        "nav.conferences": "顶会",
+        "nav.library": "我的库",
+        "search.placeholder": "检索论文、作者或主题…",
+        "search.title": "检索：{q}",
+        "search.empty": "没有找到匹配的论文，换个关键词试试。",
+        "discover.title": "按学科浏览",
+        "discover.subtitle": "期刊、顶会与 arXiv 预印本。数据来自 OpenAlex 与 arXiv。",
+        "discover.arxiv": "arXiv 最新预印本",
+        "discover.journals": "期刊",
+        "discover.conferences": "顶会论文",
+        "discover.conferencesHint": "来自 OpenAlex 的会议论文集，各会议收录完整度不同。",
+        "journal.back": "返回期刊列表",
+        "journal.loading": "正在获取最新论文…",
+        "journal.empty": "这个来源暂时没有返回结果。",
+        "journal.about": "简介",
+        "journal.officialSite": "期刊官网",
+        "journal.works": "收录 {n} 篇",
+        "journal.oa": "开放获取",
+        "journal.latest": "最新一期",
+        "paper.back": "返回列表",
+        "paper.translate": "学术翻译",
+        "paper.translating": "正在翻译…",
+        "paper.translated": "译文",
+        "paper.original": "原文",
+        "paper.both": "对照",
+        "paper.save": "收藏",
+        "paper.saved": "已收藏",
+        "paper.cite": "引用",
+        "paper.open": "打开原文",
+        "paper.notes": "阅读笔记",
+        "paper.notesHint": "收藏后可以记笔记、标状态、加标签。",
+        "paper.status": "状态",
+        "paper.tags": "标签",
+        "paper.tagsHint": "用逗号分隔，例如：方法, 综述",
+        "paper.abstract": "摘要",
+        "paper.noAbstract": "这条记录没有摘要。",
+        "paper.meta": "出版信息",
+        "paper.doi": "DOI",
+        "paper.issn": "ISSN",
+        "paper.cited": "被引 {n}",
+        "paper.oa": "开放获取",
+        "paper.preprint": "预印本",
+        "paper.conference": "会议论文",
+        "paper.journalPaper": "期刊论文",
+        "paper.authors": "作者",
+        "paper.journal": "来源",
+        "paper.year": "年份",
+        "paper.volume": "卷",
+        "paper.issue": "期",
+        "paper.pages": "页码",
+        "status.unread": "待读",
+        "status.reading": "在读",
+        "status.read": "已读",
+        "library.title": "我的库",
+        "library.subtitle": "收藏、状态与笔记都在这里；勾选多篇可以批量引用。",
+        "library.empty": "还没有收藏。在论文页点“收藏”，就会出现在这里。",
+        "library.selected": "已选 {n} 篇",
+        "library.selectAll": "全选",
+        "library.clear": "取消选择",
+        "library.cite": "引用选中",
+        "library.exportBibtex": "导出 BibTeX",
+        "library.exportRis": "导出 RIS",
+        "library.exportMd": "导出 Markdown",
+        "library.remove": "移出库",
+        "library.notesCount": "{n} 字笔记",
+        "library.filterAll": "全部",
+        "citation.title": "引用",
+        "citation.titleBatch": "批量引用 {n} 篇",
+        "citation.copy": "复制",
+        "citation.copied": "已复制",
+        "citation.close": "关闭",
+        "citation.format.gb": "GB/T 7714",
+        "citation.format.apa": "APA 7",
+        "citation.format.mla": "MLA 9",
+        "citation.format.ieee": "IEEE",
+        "citation.format.bibtex": "BibTeX",
+        "citation.format.ris": "RIS",
+        "toast.saved": "已加入我的库",
+        "toast.removed": "已移出我的库",
+        "toast.updated": "已保存",
+        "toast.exported": "已导出",
+        "toast.translateFailed": "翻译失败：{message}",
+        "error.noToken": "Musee 还没有就绪：请刷新页面后再试。",
+        "error.refresh": "刷新页面",
+        "error.load": "加载失败：{message}",
+        "error.retry": "重试",
+        loading: "加载中…",
+        "arxiv.title": "arXiv · {category}",
+        "arxiv.hint": "最新提交",
+        "conference.back": "返回顶会列表",
+        "conference.about": "会议简介",
+        "conference.latest": "最新论文",
+        "conference.dataNote": "数据来自 OpenAlex 的会议论文集；部分会议主要通过 OpenReview 或官网发布，收录可能不完整。",
+        "conference.group.ai": "人工智能",
+        "conference.group.robotics": "机器人",
+        "settings.title": "设置",
+        "settings.language": "语言",
+        "settings.languageHint": "只改变 Musee 面板，不切换整个应用的语言。",
+        "settings.translation": "翻译语言",
+        "settings.translationHint": "标题与摘要会翻译成这个语言。",
+        "settings.about": "关于",
+        "settings.version": "版本",
+        "settings.dataDir": "本地数据目录",
+        "settings.note": "Musee 把书库和译文缓存保存在本地，不需要账号，也没有服务器和遥测。",
+        "settings.close": "关闭",
+        "common.close": "关闭",
+        "common.cancel": "取消",
+        empty: "暂无内容"
+      };
+      var FR = {
+        brand: "Musee",
+        tagline: "Un bureau de lecture pour revues et préprints",
+        "nav.discover": "Découvrir",
+        "nav.conferences": "Conférences",
+        "nav.library": "Bibliothèque",
+        "search.placeholder": "Rechercher un article, un auteur, un thème…",
+        "search.title": "Recherche : {q}",
+        "search.empty": "Aucun article trouvé. Essayez un autre mot-clé.",
+        "discover.title": "Parcourir par discipline",
+        "discover.subtitle": "Revues, grandes conférences et préprints arXiv. Données OpenAlex et arXiv.",
+        "discover.arxiv": "Derniers préprints arXiv",
+        "discover.journals": "Revues",
+        "discover.conferences": "Grandes conférences",
+        "discover.conferencesHint": "Actes indexés par OpenAlex ; la couverture varie selon la conférence.",
+        "journal.back": "Retour aux revues",
+        "journal.loading": "Récupération des derniers articles…",
+        "journal.empty": "Cette source n’a renvoyé aucun article.",
+        "journal.about": "À propos",
+        "journal.officialSite": "Site de l’éditeur",
+        "journal.works": "{n} travaux indexés",
+        "journal.oa": "Libre accès",
+        "journal.latest": "Dernier numéro",
+        "paper.back": "Retour à la liste",
+        "paper.translate": "Traduction académique",
+        "paper.translating": "Traduction en cours…",
+        "paper.translated": "Traduction",
+        "paper.original": "Original",
+        "paper.both": "Côte à côte",
+        "paper.save": "Enregistrer",
+        "paper.saved": "Enregistré",
+        "paper.cite": "Citer",
+        "paper.open": "Ouvrir la source",
+        "paper.notes": "Notes de lecture",
+        "paper.notesHint": "Enregistrez l’article pour garder notes, statut et étiquettes.",
+        "paper.status": "Statut",
+        "paper.tags": "Étiquettes",
+        "paper.tagsHint": "Séparées par des virgules, par ex. méthodes, revue",
+        "paper.abstract": "Résumé",
+        "paper.noAbstract": "Aucun résumé disponible pour cette notice.",
+        "paper.meta": "Publication",
+        "paper.doi": "DOI",
+        "paper.issn": "ISSN",
+        "paper.cited": "Cité {n} fois",
+        "paper.oa": "Libre accès",
+        "paper.preprint": "Préprint",
+        "paper.conference": "Article de conférence",
+        "paper.journalPaper": "Article de revue",
+        "paper.authors": "Auteurs",
+        "paper.journal": "Source",
+        "paper.year": "Année",
+        "paper.volume": "Volume",
+        "paper.issue": "Numéro",
+        "paper.pages": "Pages",
+        "status.unread": "À lire",
+        "status.reading": "En cours",
+        "status.read": "Lu",
+        "library.title": "Ma bibliothèque",
+        "library.subtitle": "Articles enregistrés, statut de lecture et notes. Sélectionnez-en plusieurs pour des citations groupées.",
+        "library.empty": "Rien d’enregistré. Utilisez « Enregistrer » sur un article.",
+        "library.selected": "{n} sélectionnés",
+        "library.selectAll": "Tout sélectionner",
+        "library.clear": "Effacer",
+        "library.cite": "Citer la sélection",
+        "library.exportBibtex": "Exporter BibTeX",
+        "library.exportRis": "Exporter RIS",
+        "library.exportMd": "Exporter Markdown",
+        "library.remove": "Retirer",
+        "library.notesCount": "{n} caractères de notes",
+        "library.filterAll": "Tout",
+        "citation.title": "Citation",
+        "citation.titleBatch": "Citer {n} articles",
+        "citation.copy": "Copier",
+        "citation.copied": "Copié",
+        "citation.close": "Fermer",
+        "citation.format.gb": "GB/T 7714",
+        "citation.format.apa": "APA 7",
+        "citation.format.mla": "MLA 9",
+        "citation.format.ieee": "IEEE",
+        "citation.format.bibtex": "BibTeX",
+        "citation.format.ris": "RIS",
+        "toast.saved": "Ajouté à votre bibliothèque",
+        "toast.removed": "Retiré de votre bibliothèque",
+        "toast.updated": "Enregistré",
+        "toast.exported": "Exporté",
+        "toast.translateFailed": "Échec de la traduction : {message}",
+        "error.noToken": "Musee n’est pas prêt : rechargez la page.",
+        "error.refresh": "Recharger la page",
+        "error.load": "Échec du chargement : {message}",
+        "error.retry": "Réessayer",
+        loading: "Chargement…",
+        "arxiv.title": "arXiv · {category}",
+        "arxiv.hint": "Derniers dépôts",
+        "conference.back": "Retour aux conférences",
+        "conference.about": "À propos de cette conférence",
+        "conference.latest": "Articles récents",
+        "conference.dataNote": "Indexé depuis les actes OpenAlex ; certaines conférences publient surtout via OpenReview ou leur site et peuvent être incomplètes.",
+        "conference.group.ai": "IA",
+        "conference.group.robotics": "Robotique",
+        "settings.title": "Paramètres",
+        "settings.language": "Langue",
+        "settings.languageHint": "Modifie uniquement le panneau Musee, pas toute l’application.",
+        "settings.translation": "Langue de traduction",
+        "settings.translationHint": "Les titres et résumés sont traduits dans cette langue.",
+        "settings.about": "À propos",
+        "settings.version": "Version",
+        "settings.dataDir": "Données locales",
+        "settings.note": "Musee conserve votre bibliothèque et les traductions en local. Sans compte, sans serveur, sans télémétrie.",
+        "settings.close": "Fermer",
+        "common.close": "Fermer",
+        "common.cancel": "Annuler",
+        empty: "Rien pour le moment"
+      };
+      var DICTS = { en: EN, zh: ZH, fr: FR };
+      function makeT(lang) {
+        const dict = DICTS[lang] || EN;
+        return (key) => dict[key] ?? EN[key] ?? key;
+      }
+      function readStoredLang(ctx) {
+        try {
+          const stored = localStorage.getItem("musee.lang");
+          if (stored && DICTS[stored]) return stored;
+        } catch {
+        }
+        const active = ctx?.get?.("locale")?.getLocale?.().active || "en";
+        if (String(active).startsWith("zh")) return "zh";
+        if (String(active).startsWith("fr")) return "fr";
+        return "en";
+      }
+      function readStoredTarget(lang) {
+        try {
+          const stored = localStorage.getItem("musee.target");
+          if (stored === "zh" || stored === "fr") return stored;
+        } catch {
+        }
+        return lang === "fr" ? "fr" : "zh";
+      }
+
+      // src/client/settings.jsx
+      function SettingsDialog({ t, lang, onLang, targetLang, onTarget, version, dataDir, onClose }) {
+        return h(
+          Modal,
+          {
+            title: t("settings.title"),
+            onClose,
+            footer: h(Button, { onClick: onClose }, t("settings.close"))
+          },
+          h(
+            "div",
+            { className: "musee-settings" },
+            h(
+              "section",
+              { className: "musee-settings-section" },
+              h("h3", null, t("settings.language")),
+              h("p", { className: "musee-settings-hint" }, t("settings.languageHint")),
+              h(
+                "div",
+                { className: "musee-seg", role: "radiogroup", "aria-label": t("settings.language") },
+                LANGUAGES.map(
+                  (language) => h(
+                    "button",
+                    {
+                      key: language.id,
+                      type: "button",
+                      role: "radio",
+                      "aria-checked": lang === language.id,
+                      className: lang === language.id ? "active" : "",
+                      onClick: () => onLang(language.id)
+                    },
+                    language.label
+                  )
+                )
+              )
+            ),
+            h(
+              "section",
+              { className: "musee-settings-section" },
+              h("h3", null, t("settings.translation")),
+              h("p", { className: "musee-settings-hint" }, t("settings.translationHint")),
+              h(
+                "div",
+                { className: "musee-seg", role: "radiogroup", "aria-label": t("settings.translation") },
+                [
+                  ["zh", "中文"],
+                  ["fr", "Français"]
+                ].map(
+                  ([id, label]) => h(
+                    "button",
+                    {
+                      key: id,
+                      type: "button",
+                      role: "radio",
+                      "aria-checked": targetLang === id,
+                      className: targetLang === id ? "active" : "",
+                      onClick: () => onTarget(id)
+                    },
+                    label
+                  )
+                )
+              )
+            ),
+            h(
+              "section",
+              { className: "musee-settings-section" },
+              h("h3", null, t("settings.about")),
+              h(
+                "dl",
+                { className: "musee-settings-meta" },
+                version ? [h("dt", { key: "v" }, t("settings.version")), h("dd", { key: "vv" }, version)] : null,
+                dataDir ? [h("dt", { key: "d" }, t("settings.dataDir")), h("dd", { key: "dd" }, dataDir)] : null
+              ),
+              h("p", { className: "musee-settings-hint" }, t("settings.note"))
+            )
+          )
+        );
+      }
+
       // src/client/app.jsx
       function tr2(t, key, params) {
         return tFormat(t(key), params);
       }
-      function disciplineName(discipline, locale) {
-        return discipline.name?.[locale] || discipline.name?.zh || discipline.name?.en || discipline.id;
+      function disciplineName(discipline, lang) {
+        return discipline.name?.[lang] || discipline.name?.en || discipline.id;
       }
-      function App({ t, locale }) {
+      function localizedName(venue, lang) {
+        if (!venue || lang === "en") return "";
+        return (lang === "zh" ? venue.nameZh : venue.nameFr) || "";
+      }
+      function localizedAbout(venue, lang) {
+        if (!venue) return "";
+        if (lang === "zh") return venue.aboutZh || venue.about || "";
+        if (lang === "fr") return venue.aboutFr || venue.about || "";
+        return venue.about || "";
+      }
+      function issueLabel(paper) {
+        if (!paper) return "";
+        const volume = paper.volume ? `Vol. ${paper.volume}` : "";
+        const issue = paper.issue ? `No. ${paper.issue}` : "";
+        return [volume, issue, paper.year].filter(Boolean).join(" ");
+      }
+      function App({ t, lang, setLang, targetLang, setTargetLang }) {
         const [boot, setBoot] = useState(null);
         const [bootError, setBootError] = useState("");
         const [discipline, setDiscipline] = useState("urban");
         const [view, setView] = useState({ kind: "discover" });
         const [papers, setPapers] = useState([]);
+        const [sourceInfo, setSourceInfo] = useState(null);
         const [listState, setListState] = useState("idle");
         const [listError, setListError] = useState("");
         const [listTitle, setListTitle] = useState("");
@@ -942,6 +1598,7 @@ window.__ModuleLoader__.load({
         const [translation, setTranslation] = useState(null);
         const [translating, setTranslating] = useState(false);
         const [citation, setCitation] = useState(null);
+        const [settingsOpen, setSettingsOpen] = useState(false);
         const [toast, setToast] = useState("");
         const [query, setQuery] = useState("");
         const [paperFrom, setPaperFrom] = useState({ kind: "discover" });
@@ -976,14 +1633,15 @@ window.__ModuleLoader__.load({
         const scrollTop = () => {
           if (mainRef.current) mainRef.current.scrollTop = 0;
         };
-        const loadList = (loader, title) => {
+        const loadList = (loader, title, onData) => {
           setListTitle(title);
           setListState("loading");
           setListError("");
-          listRetryRef.current = () => loadList(loader, title);
+          listRetryRef.current = () => loadList(loader, title, onData);
           scrollTop();
           loader().then((data) => {
             setPapers(data.papers || []);
+            if (onData) onData(data);
             setListState("ready");
           }).catch((error) => {
             setListError(errorText(error));
@@ -992,10 +1650,17 @@ window.__ModuleLoader__.load({
         };
         const openJournal = (journal) => {
           setView({ kind: "journal", journal });
-          loadList(() => api.journal(journal.id), journal.name);
+          setSourceInfo(null);
+          loadList(() => api.journal(journal.id), journal.name, (data) => setSourceInfo(data.source || null));
+        };
+        const openConference = (conference) => {
+          setView({ kind: "conference", conference });
+          setSourceInfo(null);
+          loadList(() => api.conference(conference.id), conference.name);
         };
         const openArxiv = (category) => {
           setView({ kind: "arxiv", category });
+          setSourceInfo(null);
           loadList(() => api.arxiv(category), tr2(t, "arxiv.title", { category }));
         };
         const runSearch = (text) => {
@@ -1003,6 +1668,7 @@ window.__ModuleLoader__.load({
           if (!q) return;
           setQuery(q);
           setView({ kind: "search", q });
+          setSourceInfo(null);
           loadList(() => api.search(q), tr2(t, "search.title", { q }));
         };
         const openPaper = (paper) => {
@@ -1055,7 +1721,7 @@ window.__ModuleLoader__.load({
         const translatePaper = async (paper) => {
           setTranslating(true);
           try {
-            const data = await api.translate(paper.title, paper.abstract);
+            const data = await api.translate(paper.title, paper.abstract, targetLang);
             translationsRef.current.set(paper.id, data);
             setTranslation(data);
           } catch (error) {
@@ -1070,12 +1736,145 @@ window.__ModuleLoader__.load({
           if (listState === "error") return h(ErrorBanner, { message: listError, onRetry: listRetryRef.current, retryLabel: t("error.retry") });
           return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t("empty") });
         };
+        const renderVenueHead = (venue, kind, options = {}) => {
+          const local = localizedName(venue, lang);
+          return h(
+            "div",
+            { className: "musee-venue-head" },
+            h(JournalCover, { venue, kind, size: "lg", issue: options.issue || "" }),
+            h(
+              "div",
+              { style: { minWidth: 0 } },
+              h("h1", null, venue.name),
+              local ? h("div", { className: "musee-venue-local" }, local) : null,
+              h("p", { className: "musee-venue-about" }, localizedAbout(venue, lang)),
+              h(
+                "div",
+                { className: "musee-venue-meta" },
+                options.issn ? h("span", null, options.issn) : null,
+                options.worksCount ? h("span", null, tr2(t, "journal.works", { n: options.worksCount.toLocaleString() })) : null,
+                options.isOa ? h(Pill, { tone: "success" }, t("journal.oa")) : null,
+                kind === "conference" ? h(Pill, { tone: "brand" }, t(venue.group === "robotics" ? "conference.group.robotics" : "conference.group.ai")) : null,
+                options.homepage ? h("a", { href: options.homepage, target: "_blank", rel: "noreferrer" }, `${t("journal.officialSite")} ↗`) : null
+              )
+            )
+          );
+        };
+        const renderDiscover = () => {
+          const journals = currentDiscipline?.journals || [];
+          const conferences = boot?.conferences || [];
+          return h(
+            "div",
+            { className: "musee-page" },
+            h("div", { className: "musee-hero" }, h("h1", null, t("discover.title")), h("p", null, t("discover.subtitle"))),
+            h(
+              "div",
+              { className: "musee-row", style: { marginTop: "18px" } },
+              h(
+                "div",
+                { className: "musee-seg", role: "tablist" },
+                (boot?.disciplines || []).map(
+                  (entry) => h(
+                    "button",
+                    {
+                      key: entry.id,
+                      type: "button",
+                      className: discipline === entry.id ? "active" : "",
+                      onClick: () => setDiscipline(entry.id)
+                    },
+                    disciplineName(entry, lang)
+                  )
+                )
+              )
+            ),
+            h(
+              "div",
+              { className: "musee-section" },
+              h(
+                "div",
+                { className: "musee-section-head" },
+                h("h2", null, t("discover.journals")),
+                h("span", null, currentDiscipline?.blurb?.[lang] || currentDiscipline?.blurb?.en || "")
+              ),
+              h(
+                "div",
+                { className: "musee-grid" },
+                journals.map(
+                  (journal) => h(
+                    "button",
+                    { key: journal.id, type: "button", className: "musee-journal-card", onClick: () => openJournal(journal) },
+                    h(JournalCover, { venue: journal, kind: journal.discipline, size: "sm" }),
+                    h(
+                      "div",
+                      { className: "musee-journal-body" },
+                      h("div", { className: "musee-journal-name" }, journal.name),
+                      localizedName(journal, lang) ? h("div", { className: "musee-journal-local" }, localizedName(journal, lang)) : null,
+                      h("div", { className: "musee-journal-about" }, localizedAbout(journal, lang)),
+                      h(
+                        "div",
+                        { className: "musee-journal-meta" },
+                        h("span", null, journal.issn),
+                        h("span", null, journal.short)
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+            h(
+              "div",
+              { className: "musee-section" },
+              h(
+                "div",
+                { className: "musee-section-head" },
+                h("h2", null, t("discover.conferences")),
+                h("span", null, t("discover.conferencesHint"))
+              ),
+              h(
+                "div",
+                { className: "musee-grid" },
+                conferences.map(
+                  (conference) => h(
+                    "button",
+                    { key: conference.id, type: "button", className: "musee-journal-card", onClick: () => openConference(conference) },
+                    h(JournalCover, { venue: conference, kind: "conference", size: "sm" }),
+                    h(
+                      "div",
+                      { className: "musee-journal-body" },
+                      h("div", { className: "musee-journal-name" }, conference.name),
+                      localizedName(conference, lang) ? h("div", { className: "musee-journal-local" }, localizedName(conference, lang)) : null,
+                      h("div", { className: "musee-journal-about" }, localizedAbout(conference, lang)),
+                      h(
+                        "div",
+                        { className: "musee-journal-meta" },
+                        h("span", null, t(conference.group === "robotics" ? "conference.group.robotics" : "conference.group.ai"))
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+            h(
+              "div",
+              { className: "musee-section" },
+              h("div", { className: "musee-section-head" }, h("h2", null, t("discover.arxiv")), h("span", null, t("arxiv.hint"))),
+              h(
+                "div",
+                { className: "musee-arxiv-row" },
+                (currentDiscipline?.arxiv || []).map(
+                  (category) => h(Button, { key: category, onClick: () => openArxiv(category) }, category)
+                )
+              )
+            )
+          );
+        };
         const renderMain = () => {
           if (view.kind === "paper") {
             return h(PaperDetail, {
               paper: view.paper,
               item: libraryById.get(view.paper.id),
               t,
+              lang,
               onBack: backToList,
               onSave: savePaper,
               onUpdate: updateItem,
@@ -1096,61 +1895,32 @@ window.__ModuleLoader__.load({
               showToast
             });
           }
-          if (view.kind === "discover") {
-            const journals = currentDiscipline?.journals || [];
+          if (view.kind === "discover") return renderDiscover();
+          if (view.kind === "conference") {
             return h(
               "div",
               { className: "musee-page" },
-              h("div", { className: "musee-hero" }, h("h1", null, t("discover.title")), h("p", null, t("discover.subtitle"))),
-              h(
-                "div",
-                { className: "musee-row", style: { marginTop: "18px" } },
-                h(
-                  "div",
-                  { className: "musee-seg", role: "tablist" },
-                  (boot?.disciplines || []).map(
-                    (entry) => h(
-                      "button",
-                      {
-                        key: entry.id,
-                        type: "button",
-                        className: discipline === entry.id ? "active" : "",
-                        onClick: () => setDiscipline(entry.id)
-                      },
-                      disciplineName(entry, locale)
-                    )
-                  )
-                )
-              ),
-              h(
-                "div",
-                { className: "musee-section" },
-                h("div", { className: "musee-section-head" }, h("h2", null, t("discover.journals")), h("span", null, currentDiscipline?.blurb?.[locale] || currentDiscipline?.blurb?.zh || "")),
-                h(
-                  "div",
-                  { className: "musee-grid" },
-                  journals.map(
-                    (journal) => h(
-                      "button",
-                      { key: journal.id, type: "button", className: "musee-journal", onClick: () => openJournal(journal) },
-                      h("div", { className: "musee-journal-name" }, journal.name),
-                      h("div", { className: "musee-journal-meta" }, h("span", null, journal.issn), h("span", null, "→"))
-                    )
-                  )
-                )
-              ),
-              h(
-                "div",
-                { className: "musee-section" },
-                h("div", { className: "musee-section-head" }, h("h2", null, t("discover.arxiv")), h("span", null, t("arxiv.hint"))),
-                h(
-                  "div",
-                  { className: "musee-arxiv-row" },
-                  (currentDiscipline?.arxiv || []).map(
-                    (category) => h(Button, { key: category, onClick: () => openArxiv(category) }, category)
-                  )
-                )
-              )
+              h("button", { type: "button", className: "musee-back", onClick: goDiscover }, h(IconBack), t("discover.conferences")),
+              renderVenueHead(view.conference, "conference", {}),
+              h("p", { className: "musee-settings-hint", style: { marginTop: "12px", maxWidth: "720px" } }, t("conference.dataNote")),
+              h("div", { className: "musee-section-head", style: { marginTop: "20px" } }, h("h2", null, t("conference.latest"))),
+              renderList()
+            );
+          }
+          if (view.kind === "journal") {
+            return h(
+              "div",
+              { className: "musee-page" },
+              h("button", { type: "button", className: "musee-back", onClick: goDiscover }, h(IconBack), t("journal.back")),
+              renderVenueHead(view.journal, view.journal.discipline, {
+                issue: issueLabel(papers[0]),
+                issn: view.journal.issn,
+                worksCount: sourceInfo?.worksCount,
+                isOa: sourceInfo?.isOa,
+                homepage: sourceInfo?.homepage
+              }),
+              h("div", { className: "musee-section-head", style: { marginTop: "20px" } }, h("h2", null, t("journal.latest"))),
+              renderList()
             );
           }
           return h(
@@ -1158,7 +1928,6 @@ window.__ModuleLoader__.load({
             { className: "musee-page" },
             h("button", { type: "button", className: "musee-back", onClick: goDiscover }, h(IconBack), t("discover.title")),
             h("div", { className: "musee-hero", style: { marginTop: "12px" } }, h("h1", null, listTitle)),
-            view.kind === "journal" ? h("p", { style: { margin: "6px 0 0", color: "var(--dsw-alias-label-secondary)", fontSize: "12px" } }, view.journal.issn) : null,
             h("div", { style: { marginTop: "18px" } }, renderList())
           );
         };
@@ -1212,6 +1981,11 @@ window.__ModuleLoader__.load({
               )
             ),
             h(
+              "button",
+              { type: "button", className: "musee-icon-btn", onClick: () => setSettingsOpen(true), "aria-label": t("settings.title"), title: t("settings.title") },
+              h(IconSettings)
+            ),
+            h(
               "form",
               {
                 className: "musee-search",
@@ -1251,7 +2025,7 @@ window.__ModuleLoader__.load({
                         goDiscover();
                       }
                     },
-                    disciplineName(entry, locale)
+                    disciplineName(entry, lang)
                   )
                 )
               ),
@@ -1271,6 +2045,24 @@ window.__ModuleLoader__.load({
                     },
                     journal.name,
                     h("span", { className: "musee-rail-sub" }, journal.issn)
+                  )
+                )
+              ),
+              h("div", { className: "musee-rail-title" }, t("discover.conferences")),
+              h(
+                "div",
+                { className: "musee-rail-group" },
+                (boot.conferences || []).map(
+                  (conference) => h(
+                    "button",
+                    {
+                      key: conference.id,
+                      type: "button",
+                      className: `musee-rail-item ${view.kind === "conference" && view.conference.id === conference.id ? "active" : ""}`,
+                      onClick: () => openConference(conference)
+                    },
+                    conference.name,
+                    h("span", { className: "musee-rail-sub" }, t(conference.group === "robotics" ? "conference.group.robotics" : "conference.group.ai"))
                   )
                 )
               ),
@@ -1294,196 +2086,42 @@ window.__ModuleLoader__.load({
             ),
             h("main", { className: "musee-main", ref: mainRef }, renderMain())
           ),
+          settingsOpen ? h(SettingsDialog, {
+            t,
+            lang,
+            onLang: setLang,
+            targetLang,
+            onTarget: setTargetLang,
+            version: boot.version,
+            dataDir: boot.dataDir,
+            onClose: () => setSettingsOpen(false)
+          }) : null,
           citation ? h(CitationDialog, { papers: citation.papers, t, onClose: () => setCitation(null), showToast }) : null,
           toast ? h("div", { className: "musee-toast", role: "status" }, toast) : null
         );
       }
 
-      // src/client/locale.js
-      var ZH = {
-        brand: "Musee",
-        tagline: "期刊与预印本阅读台",
-        "nav.discover": "发现",
-        "nav.library": "我的库",
-        "search.placeholder": "检索论文、作者或主题…",
-        "search.title": "检索：{q}",
-        "search.empty": "没有找到匹配的论文，换个关键词试试。",
-        "discover.title": "按学科浏览期刊",
-        "discover.subtitle": "选一本期刊看最新论文，或从 arXiv 分类进入预印本。数据来自 OpenAlex 与 arXiv。",
-        "discover.arxiv": "arXiv 最新预印本",
-        "discover.journals": "期刊",
-        "journal.back": "返回期刊列表",
-        "journal.loading": "正在获取最新论文…",
-        "journal.empty": "这本期刊暂时没有返回结果。",
-        "paper.back": "返回列表",
-        "paper.translate": "学术翻译",
-        "paper.translating": "正在翻译…",
-        "paper.translated": "译文",
-        "paper.original": "原文",
-        "paper.both": "对照",
-        "paper.save": "收藏",
-        "paper.saved": "已收藏",
-        "paper.cite": "引用",
-        "paper.open": "打开原文",
-        "paper.notes": "阅读笔记",
-        "paper.notesHint": "收藏后可以记笔记、标状态、加标签。",
-        "paper.status": "状态",
-        "paper.tags": "标签",
-        "paper.tagsHint": "用逗号分隔，例如：方法, 综述",
-        "paper.abstract": "摘要",
-        "paper.noAbstract": "这条记录没有摘要。",
-        "paper.meta": "出版信息",
-        "paper.doi": "DOI",
-        "paper.issn": "ISSN",
-        "paper.cited": "被引 {n}",
-        "paper.oa": "开放获取",
-        "paper.preprint": "预印本",
-        "paper.authors": "作者",
-        "paper.journal": "期刊",
-        "paper.year": "年份",
-        "paper.volume": "卷",
-        "paper.issue": "期",
-        "paper.pages": "页码",
-        "status.unread": "待读",
-        "status.reading": "在读",
-        "status.read": "已读",
-        "library.title": "我的库",
-        "library.subtitle": "收藏、状态与笔记都在这里；勾选多篇可以批量引用。",
-        "library.empty": "还没有收藏。在论文页点“收藏”，就会出现在这里。",
-        "library.selected": "已选 {n} 篇",
-        "library.selectAll": "全选",
-        "library.clear": "取消选择",
-        "library.cite": "引用选中",
-        "library.exportBibtex": "导出 BibTeX",
-        "library.exportRis": "导出 RIS",
-        "library.exportMd": "导出 Markdown",
-        "library.remove": "移出库",
-        "library.notesCount": "{n} 字笔记",
-        "library.filterAll": "全部",
-        "citation.title": "引用",
-        "citation.titleBatch": "批量引用 {n} 篇",
-        "citation.copy": "复制",
-        "citation.copied": "已复制",
-        "citation.close": "关闭",
-        "citation.format.gb": "GB/T 7714",
-        "citation.format.apa": "APA 7",
-        "citation.format.mla": "MLA 9",
-        "citation.format.ieee": "IEEE",
-        "citation.format.bibtex": "BibTeX",
-        "citation.format.ris": "RIS",
-        "toast.saved": "已加入我的库",
-        "toast.removed": "已移出我的库",
-        "toast.updated": "已保存",
-        "toast.exported": "已导出",
-        "toast.translateFailed": "翻译失败：{message}",
-        "error.noToken": "Musee 还没有就绪：请刷新页面后再试。",
-        "error.refresh": "刷新页面",
-        "error.load": "加载失败：{message}",
-        "error.retry": "重试",
-        loading: "加载中…",
-        "arxiv.title": "arXiv · {category}",
-        "arxiv.hint": "最新提交",
-        "common.close": "关闭",
-        "common.cancel": "取消",
-        empty: "暂无内容"
-      };
-      var EN = {
-        brand: "Musee",
-        tagline: "A reading desk for journals and preprints",
-        "nav.discover": "Discover",
-        "nav.library": "Library",
-        "search.placeholder": "Search papers, authors, topics…",
-        "search.title": "Search: {q}",
-        "search.empty": "No matching papers. Try another keyword.",
-        "discover.title": "Browse journals by field",
-        "discover.subtitle": "Pick a journal for its latest papers, or open a preprint category on arXiv. Data from OpenAlex and arXiv.",
-        "discover.arxiv": "Latest on arXiv",
-        "discover.journals": "Journals",
-        "journal.back": "Back to journals",
-        "journal.loading": "Fetching the latest papers…",
-        "journal.empty": "This journal returned no papers.",
-        "paper.back": "Back to list",
-        "paper.translate": "Academic translation",
-        "paper.translating": "Translating…",
-        "paper.translated": "Translation",
-        "paper.original": "Original",
-        "paper.both": "Side by side",
-        "paper.save": "Save",
-        "paper.saved": "Saved",
-        "paper.cite": "Cite",
-        "paper.open": "Open source",
-        "paper.notes": "Reading notes",
-        "paper.notesHint": "Save the paper to keep notes, status, and tags.",
-        "paper.status": "Status",
-        "paper.tags": "Tags",
-        "paper.tagsHint": "Comma separated, e.g. methods, review",
-        "paper.abstract": "Abstract",
-        "paper.noAbstract": "No abstract is available for this record.",
-        "paper.meta": "Publication",
-        "paper.doi": "DOI",
-        "paper.issn": "ISSN",
-        "paper.cited": "Cited by {n}",
-        "paper.oa": "Open access",
-        "paper.preprint": "Preprint",
-        "paper.authors": "Authors",
-        "paper.journal": "Journal",
-        "paper.year": "Year",
-        "paper.volume": "Volume",
-        "paper.issue": "Issue",
-        "paper.pages": "Pages",
-        "status.unread": "To read",
-        "status.reading": "Reading",
-        "status.read": "Read",
-        "library.title": "My library",
-        "library.subtitle": "Saved papers, reading status, and notes. Select several for batch citations.",
-        "library.empty": "Nothing saved yet. Use Save on a paper to collect it here.",
-        "library.selected": "{n} selected",
-        "library.selectAll": "Select all",
-        "library.clear": "Clear",
-        "library.cite": "Cite selected",
-        "library.exportBibtex": "Export BibTeX",
-        "library.exportRis": "Export RIS",
-        "library.exportMd": "Export Markdown",
-        "library.remove": "Remove",
-        "library.notesCount": "{n} characters of notes",
-        "library.filterAll": "All",
-        "citation.title": "Citation",
-        "citation.titleBatch": "Cite {n} papers",
-        "citation.copy": "Copy",
-        "citation.copied": "Copied",
-        "citation.close": "Close",
-        "citation.format.gb": "GB/T 7714",
-        "citation.format.apa": "APA 7",
-        "citation.format.mla": "MLA 9",
-        "citation.format.ieee": "IEEE",
-        "citation.format.bibtex": "BibTeX",
-        "citation.format.ris": "RIS",
-        "toast.saved": "Added to your library",
-        "toast.removed": "Removed from your library",
-        "toast.updated": "Saved",
-        "toast.exported": "Exported",
-        "toast.translateFailed": "Translation failed: {message}",
-        "error.noToken": "Musee is not ready: refresh the page and try again.",
-        "error.refresh": "Refresh page",
-        "error.load": "Failed to load: {message}",
-        "error.retry": "Retry",
-        loading: "Loading…",
-        "arxiv.title": "arXiv · {category}",
-        "arxiv.hint": "Latest submissions",
-        "common.close": "Close",
-        "common.cancel": "Cancel",
-        empty: "Nothing here yet"
-      };
-
       // src/client/index.jsx
       function createPanel(ctx) {
         return function MuseePanel() {
-          const snapshot = useSyncExternalStore(
-            (callback) => ctx.locale.subscribe(callback),
-            () => ctx.locale.getSnapshot()
-          );
-          const t = useMemo(() => ctx.locale.bind("musee"), []);
-          return h(App, { t, locale: snapshot.active });
+          const [lang, setLangState] = useState(() => readStoredLang(ctx));
+          const [targetLang, setTargetLangState] = useState(() => readStoredTarget(readStoredLang(ctx)));
+          const t = useMemo(() => makeT(lang), [lang]);
+          const setLang = (next) => {
+            try {
+              localStorage.setItem("musee.lang", next);
+            } catch {
+            }
+            setLangState(next);
+          };
+          const setTargetLang = (next) => {
+            try {
+              localStorage.setItem("musee.target", next);
+            } catch {
+            }
+            setTargetLangState(next);
+          };
+          return h(App, { t, lang, setLang, targetLang, setTargetLang });
         };
       }
       function MuseeIcon({ size = 18, active = false }) {
@@ -1507,10 +2145,8 @@ window.__ModuleLoader__.load({
         );
       }
       var plugin = {
-        inject: ["slots", "locale"],
+        inject: ["slots"],
         apply(ctx) {
-          ctx.effect(() => ctx.locale.register("musee", "zh", ZH), "musee: locale zh");
-          ctx.effect(() => ctx.locale.register("musee", "en", EN), "musee: locale en");
           const Panel = createPanel(ctx);
           ctx.slots.inject("main", () => ctx.slots.register({ name: "main", key: "musee" }, Panel));
           ctx.slots.inject(

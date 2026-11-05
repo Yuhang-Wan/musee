@@ -1,25 +1,47 @@
 import { h, useEffect, useMemo, useRef, useState } from './react.js';
 import { api, downloadExport, tFormat } from './api.js';
 import { CSS } from './styles.js';
-import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, Loading, Pill } from './ui.jsx';
+import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, IconSettings, Loading, Pill } from './ui.jsx';
 import { PaperDetail, PaperList } from './paper.jsx';
 import { LibraryView } from './library.jsx';
 import { CitationDialog } from './citation.jsx';
+import { JournalCover } from './cover.jsx';
+import { SettingsDialog } from './settings.jsx';
 
 function tr(t, key, params) {
   return tFormat(t(key), params);
 }
 
-function disciplineName(discipline, locale) {
-  return discipline.name?.[locale] || discipline.name?.zh || discipline.name?.en || discipline.id;
+function disciplineName(discipline, lang) {
+  return discipline.name?.[lang] || discipline.name?.en || discipline.id;
 }
 
-export function App({ t, locale }) {
+function localizedName(venue, lang) {
+  if (!venue || lang === 'en') return '';
+  return (lang === 'zh' ? venue.nameZh : venue.nameFr) || '';
+}
+
+function localizedAbout(venue, lang) {
+  if (!venue) return '';
+  if (lang === 'zh') return venue.aboutZh || venue.about || '';
+  if (lang === 'fr') return venue.aboutFr || venue.about || '';
+  return venue.about || '';
+}
+
+function issueLabel(paper) {
+  if (!paper) return '';
+  const volume = paper.volume ? `Vol. ${paper.volume}` : '';
+  const issue = paper.issue ? `No. ${paper.issue}` : '';
+  return [volume, issue, paper.year].filter(Boolean).join(' ');
+}
+
+export function App({ t, lang, setLang, targetLang, setTargetLang }) {
   const [boot, setBoot] = useState(null);
   const [bootError, setBootError] = useState('');
   const [discipline, setDiscipline] = useState('urban');
   const [view, setView] = useState({ kind: 'discover' });
   const [papers, setPapers] = useState([]);
+  const [sourceInfo, setSourceInfo] = useState(null);
   const [listState, setListState] = useState('idle');
   const [listError, setListError] = useState('');
   const [listTitle, setListTitle] = useState('');
@@ -27,6 +49,7 @@ export function App({ t, locale }) {
   const [translation, setTranslation] = useState(null);
   const [translating, setTranslating] = useState(false);
   const [citation, setCitation] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
   const [paperFrom, setPaperFrom] = useState({ kind: 'discover' });
@@ -72,15 +95,16 @@ export function App({ t, locale }) {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   };
 
-  const loadList = (loader, title) => {
+  const loadList = (loader, title, onData) => {
     setListTitle(title);
     setListState('loading');
     setListError('');
-    listRetryRef.current = () => loadList(loader, title);
+    listRetryRef.current = () => loadList(loader, title, onData);
     scrollTop();
     loader()
       .then((data) => {
         setPapers(data.papers || []);
+        if (onData) onData(data);
         setListState('ready');
       })
       .catch((error) => {
@@ -91,11 +115,19 @@ export function App({ t, locale }) {
 
   const openJournal = (journal) => {
     setView({ kind: 'journal', journal });
-    loadList(() => api.journal(journal.id), journal.name);
+    setSourceInfo(null);
+    loadList(() => api.journal(journal.id), journal.name, (data) => setSourceInfo(data.source || null));
+  };
+
+  const openConference = (conference) => {
+    setView({ kind: 'conference', conference });
+    setSourceInfo(null);
+    loadList(() => api.conference(conference.id), conference.name);
   };
 
   const openArxiv = (category) => {
     setView({ kind: 'arxiv', category });
+    setSourceInfo(null);
     loadList(() => api.arxiv(category), tr(t, 'arxiv.title', { category }));
   };
 
@@ -104,6 +136,7 @@ export function App({ t, locale }) {
     if (!q) return;
     setQuery(q);
     setView({ kind: 'search', q });
+    setSourceInfo(null);
     loadList(() => api.search(q), tr(t, 'search.title', { q }));
   };
 
@@ -164,7 +197,7 @@ export function App({ t, locale }) {
   const translatePaper = async (paper) => {
     setTranslating(true);
     try {
-      const data = await api.translate(paper.title, paper.abstract);
+      const data = await api.translate(paper.title, paper.abstract, targetLang);
       translationsRef.current.set(paper.id, data);
       setTranslation(data);
     } catch (error) {
@@ -182,12 +215,151 @@ export function App({ t, locale }) {
     return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t('empty') });
   };
 
+  const renderVenueHead = (venue, kind, options = {}) => {
+    const local = localizedName(venue, lang);
+    return h(
+      'div',
+      { className: 'musee-venue-head' },
+      h(JournalCover, { venue, kind, size: 'lg', issue: options.issue || '' }),
+      h(
+        'div',
+        { style: { minWidth: 0 } },
+        h('h1', null, venue.name),
+        local ? h('div', { className: 'musee-venue-local' }, local) : null,
+        h('p', { className: 'musee-venue-about' }, localizedAbout(venue, lang)),
+        h(
+          'div',
+          { className: 'musee-venue-meta' },
+          options.issn ? h('span', null, options.issn) : null,
+          options.worksCount ? h('span', null, tr(t, 'journal.works', { n: options.worksCount.toLocaleString() })) : null,
+          options.isOa ? h(Pill, { tone: 'success' }, t('journal.oa')) : null,
+          kind === 'conference'
+            ? h(Pill, { tone: 'brand' }, t(venue.group === 'robotics' ? 'conference.group.robotics' : 'conference.group.ai'))
+            : null,
+          options.homepage
+            ? h('a', { href: options.homepage, target: '_blank', rel: 'noreferrer' }, `${t('journal.officialSite')} ↗`)
+            : null,
+        ),
+      ),
+    );
+  };
+
+  const renderDiscover = () => {
+    const journals = currentDiscipline?.journals || [];
+    const conferences = boot?.conferences || [];
+    return h(
+      'div',
+      { className: 'musee-page' },
+      h('div', { className: 'musee-hero' }, h('h1', null, t('discover.title')), h('p', null, t('discover.subtitle'))),
+      h(
+        'div',
+        { className: 'musee-row', style: { marginTop: '18px' } },
+        h(
+          'div',
+          { className: 'musee-seg', role: 'tablist' },
+          (boot?.disciplines || []).map((entry) =>
+            h(
+              'button',
+              {
+                key: entry.id,
+                type: 'button',
+                className: discipline === entry.id ? 'active' : '',
+                onClick: () => setDiscipline(entry.id),
+              },
+              disciplineName(entry, lang),
+            ),
+          ),
+        ),
+      ),
+      h(
+        'div',
+        { className: 'musee-section' },
+        h(
+          'div',
+          { className: 'musee-section-head' },
+          h('h2', null, t('discover.journals')),
+          h('span', null, currentDiscipline?.blurb?.[lang] || currentDiscipline?.blurb?.en || ''),
+        ),
+        h(
+          'div',
+          { className: 'musee-grid' },
+          journals.map((journal) =>
+            h(
+              'button',
+              { key: journal.id, type: 'button', className: 'musee-journal-card', onClick: () => openJournal(journal) },
+              h(JournalCover, { venue: journal, kind: journal.discipline, size: 'sm' }),
+              h(
+                'div',
+                { className: 'musee-journal-body' },
+                h('div', { className: 'musee-journal-name' }, journal.name),
+                localizedName(journal, lang) ? h('div', { className: 'musee-journal-local' }, localizedName(journal, lang)) : null,
+                h('div', { className: 'musee-journal-about' }, localizedAbout(journal, lang)),
+                h(
+                  'div',
+                  { className: 'musee-journal-meta' },
+                  h('span', null, journal.issn),
+                  h('span', null, journal.short),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      h(
+        'div',
+        { className: 'musee-section' },
+        h(
+          'div',
+          { className: 'musee-section-head' },
+          h('h2', null, t('discover.conferences')),
+          h('span', null, t('discover.conferencesHint')),
+        ),
+        h(
+          'div',
+          { className: 'musee-grid' },
+          conferences.map((conference) =>
+            h(
+              'button',
+              { key: conference.id, type: 'button', className: 'musee-journal-card', onClick: () => openConference(conference) },
+              h(JournalCover, { venue: conference, kind: 'conference', size: 'sm' }),
+              h(
+                'div',
+                { className: 'musee-journal-body' },
+                h('div', { className: 'musee-journal-name' }, conference.name),
+                localizedName(conference, lang) ? h('div', { className: 'musee-journal-local' }, localizedName(conference, lang)) : null,
+                h('div', { className: 'musee-journal-about' }, localizedAbout(conference, lang)),
+                h(
+                  'div',
+                  { className: 'musee-journal-meta' },
+                  h('span', null, t(conference.group === 'robotics' ? 'conference.group.robotics' : 'conference.group.ai')),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      h(
+        'div',
+        { className: 'musee-section' },
+        h('div', { className: 'musee-section-head' }, h('h2', null, t('discover.arxiv')), h('span', null, t('arxiv.hint'))),
+        h(
+          'div',
+          { className: 'musee-arxiv-row' },
+          (currentDiscipline?.arxiv || []).map((category) =>
+            h(Button, { key: category, onClick: () => openArxiv(category) }, category),
+          ),
+        ),
+      ),
+    );
+  };
+
   const renderMain = () => {
     if (view.kind === 'paper') {
       return h(PaperDetail, {
         paper: view.paper,
         item: libraryById.get(view.paper.id),
         t,
+        lang,
         onBack: backToList,
         onSave: savePaper,
         onUpdate: updateItem,
@@ -210,61 +382,34 @@ export function App({ t, locale }) {
       });
     }
 
-    if (view.kind === 'discover') {
-      const journals = currentDiscipline?.journals || [];
+    if (view.kind === 'discover') return renderDiscover();
+
+    if (view.kind === 'conference') {
       return h(
         'div',
         { className: 'musee-page' },
-        h('div', { className: 'musee-hero' }, h('h1', null, t('discover.title')), h('p', null, t('discover.subtitle'))),
-        h(
-          'div',
-          { className: 'musee-row', style: { marginTop: '18px' } },
-          h(
-            'div',
-            { className: 'musee-seg', role: 'tablist' },
-            (boot?.disciplines || []).map((entry) =>
-              h(
-                'button',
-                {
-                  key: entry.id,
-                  type: 'button',
-                  className: discipline === entry.id ? 'active' : '',
-                  onClick: () => setDiscipline(entry.id),
-                },
-                disciplineName(entry, locale),
-              ),
-            ),
-          ),
-        ),
-        h(
-          'div',
-          { className: 'musee-section' },
-          h('div', { className: 'musee-section-head' }, h('h2', null, t('discover.journals')), h('span', null, currentDiscipline?.blurb?.[locale] || currentDiscipline?.blurb?.zh || '')),
-          h(
-            'div',
-            { className: 'musee-grid' },
-            journals.map((journal) =>
-              h(
-                'button',
-                { key: journal.id, type: 'button', className: 'musee-journal', onClick: () => openJournal(journal) },
-                h('div', { className: 'musee-journal-name' }, journal.name),
-                h('div', { className: 'musee-journal-meta' }, h('span', null, journal.issn), h('span', null, '→')),
-              ),
-            ),
-          ),
-        ),
-        h(
-          'div',
-          { className: 'musee-section' },
-          h('div', { className: 'musee-section-head' }, h('h2', null, t('discover.arxiv')), h('span', null, t('arxiv.hint'))),
-          h(
-            'div',
-            { className: 'musee-arxiv-row' },
-            (currentDiscipline?.arxiv || []).map((category) =>
-              h(Button, { key: category, onClick: () => openArxiv(category) }, category),
-            ),
-          ),
-        ),
+        h('button', { type: 'button', className: 'musee-back', onClick: goDiscover }, h(IconBack), t('discover.conferences')),
+        renderVenueHead(view.conference, 'conference', {}),
+        h('p', { className: 'musee-settings-hint', style: { marginTop: '12px', maxWidth: '720px' } }, t('conference.dataNote')),
+        h('div', { className: 'musee-section-head', style: { marginTop: '20px' } }, h('h2', null, t('conference.latest'))),
+        renderList(),
+      );
+    }
+
+    if (view.kind === 'journal') {
+      return h(
+        'div',
+        { className: 'musee-page' },
+        h('button', { type: 'button', className: 'musee-back', onClick: goDiscover }, h(IconBack), t('journal.back')),
+        renderVenueHead(view.journal, view.journal.discipline, {
+          issue: issueLabel(papers[0]),
+          issn: view.journal.issn,
+          worksCount: sourceInfo?.worksCount,
+          isOa: sourceInfo?.isOa,
+          homepage: sourceInfo?.homepage,
+        }),
+        h('div', { className: 'musee-section-head', style: { marginTop: '20px' } }, h('h2', null, t('journal.latest'))),
+        renderList(),
       );
     }
 
@@ -273,7 +418,6 @@ export function App({ t, locale }) {
       { className: 'musee-page' },
       h('button', { type: 'button', className: 'musee-back', onClick: goDiscover }, h(IconBack), t('discover.title')),
       h('div', { className: 'musee-hero', style: { marginTop: '12px' } }, h('h1', null, listTitle)),
-      view.kind === 'journal' ? h('p', { style: { margin: '6px 0 0', color: 'var(--dsw-alias-label-secondary)', fontSize: '12px' } }, view.journal.issn) : null,
       h('div', { style: { marginTop: '18px' } }, renderList()),
     );
   };
@@ -330,6 +474,11 @@ export function App({ t, locale }) {
         ),
       ),
       h(
+        'button',
+        { type: 'button', className: 'musee-icon-btn', onClick: () => setSettingsOpen(true), 'aria-label': t('settings.title'), title: t('settings.title') },
+        h(IconSettings),
+      ),
+      h(
         'form',
         {
           className: 'musee-search',
@@ -370,7 +519,7 @@ export function App({ t, locale }) {
                   goDiscover();
                 },
               },
-              disciplineName(entry, locale),
+              disciplineName(entry, lang),
             ),
           ),
         ),
@@ -390,6 +539,24 @@ export function App({ t, locale }) {
               },
               journal.name,
               h('span', { className: 'musee-rail-sub' }, journal.issn),
+            ),
+          ),
+        ),
+        h('div', { className: 'musee-rail-title' }, t('discover.conferences')),
+        h(
+          'div',
+          { className: 'musee-rail-group' },
+          (boot.conferences || []).map((conference) =>
+            h(
+              'button',
+              {
+                key: conference.id,
+                type: 'button',
+                className: `musee-rail-item ${view.kind === 'conference' && view.conference.id === conference.id ? 'active' : ''}`,
+                onClick: () => openConference(conference),
+              },
+              conference.name,
+              h('span', { className: 'musee-rail-sub' }, t(conference.group === 'robotics' ? 'conference.group.robotics' : 'conference.group.ai')),
             ),
           ),
         ),
@@ -414,6 +581,18 @@ export function App({ t, locale }) {
       h('main', { className: 'musee-main', ref: mainRef }, renderMain()),
     ),
 
+    settingsOpen
+      ? h(SettingsDialog, {
+          t,
+          lang,
+          onLang: setLang,
+          targetLang,
+          onTarget: setTargetLang,
+          version: boot.version,
+          dataDir: boot.dataDir,
+          onClose: () => setSettingsOpen(false),
+        })
+      : null,
     citation ? h(CitationDialog, { papers: citation.papers, t, onClose: () => setCitation(null), showToast }) : null,
     toast ? h('div', { className: 'musee-toast', role: 'status' }, toast) : null,
   );

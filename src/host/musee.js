@@ -2,10 +2,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { DISCIPLINES, JOURNALS, JOURNALS_BY_ID, VERSION, journalsFor } from './catalog.js';
+import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, VERSION, journalsFor } from './catalog.js';
 import { latestByCategory } from './arxiv.js';
 import { cite } from './cite.js';
-import { searchWorks, worksBySource } from './openalex.js';
+import { fetchSource, searchWorks, worksBySource } from './openalex.js';
 import { createStore } from './store.js';
 import { createTranslator } from './translate.js';
 import { TtlCache } from './util.js';
@@ -68,6 +68,7 @@ export function createMusee(ctx, config = {}) {
   const token = crypto.randomUUID();
   const dataDir = resolveDataDir(config);
   const cache = new TtlCache(10 * 60 * 1000, 160);
+  const sourceCache = new TtlCache(24 * 60 * 60 * 1000, 64);
   const storePromise = createStore(dataDir);
 
   // The translator is created synchronously while the store loads asynchronously;
@@ -113,6 +114,7 @@ export function createMusee(ctx, config = {}) {
       return json({
         version: VERSION,
         disciplines: disciplinePayload(),
+        conferences: CONFERENCES,
         llm: translator.available(),
         route: translator.route(),
         dataDir,
@@ -129,10 +131,22 @@ export function createMusee(ctx, config = {}) {
       if (!journal) return json({ error: '未知的期刊。' }, 404);
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 20, 1), 50);
       const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
-      const papers = await cache.wrap(`journal:${journalId}:${limit}:${offset}`, () =>
-        worksBySource(journal.openalex, { limit, offset, mailto }),
+      const [papers, source] = await Promise.all([
+        cache.wrap(`journal:${journalId}:${limit}:${offset}`, () => worksBySource(journal.openalex, { limit, offset, mailto })),
+        sourceCache.wrap(`source:${journal.openalex}`, () => fetchSource(journal.openalex, { mailto })),
+      ]);
+      return json({ journal, source, papers });
+    }
+
+    if (pathname === '/conference') {
+      const conferenceId = url.searchParams.get('conferenceId') || '';
+      const conference = CONFERENCES_BY_ID.get(conferenceId);
+      if (!conference) return json({ error: '未知的会议。' }, 404);
+      const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 20, 1), 50);
+      const papers = await cache.wrap(`conference:${conferenceId}:${limit}`, () =>
+        worksBySource(conference.openalex, { limit, mailto }),
       );
-      return json({ journal, papers });
+      return json({ conference, papers });
     }
 
     if (pathname === '/arxiv') {
@@ -155,8 +169,9 @@ export function createMusee(ctx, config = {}) {
       const body = await request.json();
       const title = String(body.title || '').slice(0, 1000);
       const abstract = String(body.abstract || '').slice(0, 30000);
+      const lang = body.lang === 'fr' ? 'fr' : 'zh';
       if (!title && !abstract) return json({ error: '没有可翻译的内容。' }, 400);
-      const result = await translator.translate({ title, abstract });
+      const result = await translator.translate({ title, abstract, lang });
       return json(result);
     }
 

@@ -25,6 +25,7 @@ export function PaperList({ papers, onOpen, libraryById, t, emptyTitle }) {
         h(
           'div',
           { className: 'musee-paper-meta' },
+          paper.kind === 'conference' ? h(Pill, { tone: 'brand' }, t('paper.conference')) : null,
           paper.journal?.name ? h('span', null, paper.journal.name) : paper.source === 'arxiv' ? h(Pill, { tone: 'brand' }, 'arXiv') : null,
           paper.year ? h('span', null, String(paper.year)) : null,
           paper.authors?.length ? h('span', null, shortAuthors(paper.authors)) : null,
@@ -128,6 +129,7 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
     h(
       'div',
       { className: 'musee-meta-line' },
+      paper.kind === 'conference' ? h(Pill, { tone: 'brand' }, t('paper.conference')) : null,
       paper.journal?.name ? h('span', null, paper.journal.name) : paper.source === 'arxiv' ? h(Pill, { tone: 'brand' }, 'arXiv') : null,
       paper.year ? h('span', null, String(paper.year)) : null,
       paper.volume ? h('span', null, `${t('paper.volume')} ${paper.volume}`) : null,

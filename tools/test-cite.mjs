@@ -57,6 +57,28 @@ assert.equal((ris.match(/^TY {2}- /gm) || []).length, 2);
 assert.match(ris, /^ER {2}- $/m);
 assert.match(ris, /DO {2}- 10\.1177\/00420980241234567/);
 
+const conferencePaper = {
+  id: 'doi:10.1109/cvpr.2025.00001',
+  source: 'openalex',
+  kind: 'conference',
+  title: 'A conference paper about embodied agents',
+  abstract: 'Test abstract.',
+  authors: ['Alice Zhang', 'Bob Smith'],
+  year: 2025,
+  doi: '10.1109/cvpr.2025.00001',
+  url: 'https://doi.org/10.1109/cvpr.2025.00001',
+  journal: { name: 'Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition' },
+  pages: '1-10',
+};
+
+assert.match(cite([conferencePaper], 'gb'), /\[C\]\. Proceedings of the IEEE\/CVF/);
+assert.match(cite([conferencePaper], 'apa'), /In Proceedings of the IEEE\/CVF/);
+assert.match(cite([conferencePaper], 'ieee'), /"A conference paper about embodied agents," in Proceedings/);
+assert.match(cite([conferencePaper], 'bibtex'), /^@inproceedings\{/);
+assert.match(cite([conferencePaper], 'bibtex'), /booktitle = \{Proceedings of the IEEE\/CVF/);
+assert.match(cite([conferencePaper], 'ris'), /^TY {2}- CONF$/m);
+assert.match(cite([conferencePaper], 'ris'), /^T2 {2}- Proceedings/m);
+
 assert.throws(() => cite([journalPaper], 'unknown'), /不支持的引用格式/);
 assert.ok(cite([], 'gb') === '');
 

@@ -11,9 +11,12 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 ## 功能
 
 - **三个学科，32 本期刊**：城市研究、物理、人工智能与机器人；期刊目录内置 ISSN 与 OpenAlex source id。
+- **图文期刊卡片**：每本期刊有原创排版封面（随学科变色的书脊设计）、Musee 撰写的范围简介、ISSN 与收录量；详情页显示最新一卷/期。
+- **顶会论文**：NeurIPS、CVPR、ICCV、AAAI、IJCAI、ACL、EMNLP、KDD、ICRA、IROS、RSS，来自 OpenAlex 会议论文集。
 - **arXiv 预印本**：按 `cs.RO`、`cs.AI`、`quant-ph`、`hep-th`、`physics.soc-ph` 等分类看最新提交。
-- **学术翻译**：调用你已配置的模型，按“标题 + 摘要 + 学术语体 + 术语一致”的提示词翻译；结果按内容哈希缓存，重复阅读不重复计费。
-- **一键引用与批量引用**：GB/T 7714、APA 7、MLA 9、IEEE、BibTeX、RIS 六种格式；在“我的库”勾选多篇即可批量生成。
+- **学术翻译**：调用你已配置的模型，按“标题 + 摘要 + 学术语体 + 术语一致”的提示词翻译成中文或法语；结果按内容哈希缓存，重复阅读不重复计费。
+- **面板内语言设置**：English / 中文 / Français 三语界面，只影响 Musee 面板，不切换整个 DSH；期刊名与简介会以所选语言显示在英文名下方。
+- **一键引用与批量引用**：GB/T 7714、APA 7、MLA 9、IEEE、BibTeX、RIS 六种格式；期刊论文、会议论文、预印本分别按 `[J]` / `[C]` / `@inproceedings` 处理。
 - **收藏与笔记**：阅读状态（待读/在读/已读）、标签、Markdown 笔记、按状态筛选、整库导出 Markdown / BibTeX / RIS。
 - **检索**：按标题、作者、主题检索 OpenAlex 收录的论文。
 - **本地优先**：无账号、无后端、无遥测；库与译文缓存都在 `~/.dsh/musee`，可随时导出。
@@ -70,6 +73,9 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - 只读取 **公开元数据与摘要**，不抓取付费全文，不绕过任何付费墙或登录墙。
 - 使用 OpenAlex 与 arXiv 的公开 API；请填写 `mailto` 以遵守 OpenAlex 的礼貌使用约定。
 - 翻译只把**标题与摘要**发送到你配置的模型，不发送整篇 PDF，也不上传到 Musee 自己的服务器（Musee 没有服务器）。
+- **期刊封面是 Musee 的原创排版设计**，不是出版商封面；出版商封面图有版权且没有稳定的授权 API，因此这里用按学科配色、由刊名缩写生成的封面替代。
+- **期刊简介是 Musee 撰写的范围说明**，不是出版商官方文案；官方描述可点“期刊官网”前往。
+- 顶会论文来自 OpenAlex 的会议论文集；ICML、ICLR、CoRL 等以 OpenReview 为主的会议收录不完整，后续会补其他数据源。
 - 引用格式由程序生成，投稿前请按目标期刊要求核对。
 
 ## 工作方式
@@ -122,9 +128,10 @@ cordis.patch.yml      插件清单
 
 ## 路线图
 
-- **v0.2 全文阅读**：arXiv HTML/PDF、PMC JATS，段落级双语对照与高亮锚定。
-- **v0.3 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
-- **v0.4 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
+- **v0.2 图文与顶会（当前）**：期刊封面与简介、三语界面、顶会论文集。
+- **v0.3 全文阅读**：arXiv HTML/PDF、PMC JATS，段落级双语对照与高亮锚定。
+- **v0.4 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
+- **v0.5 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
 - **v1.0 全学科**：可导入的期刊目录、更多数据源、npm 发布与完整文档。
 
 欢迎在 Issues 里补充你所在领域的期刊清单和使用场景。

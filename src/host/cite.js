@@ -1,5 +1,11 @@
 const FORMATS = new Set(['gb', 'apa', 'mla', 'ieee', 'bibtex', 'ris']);
 
+function kindOf(paper) {
+  if (paper.kind) return paper.kind;
+  if (paper.source === 'arxiv') return 'preprint';
+  return 'journal';
+}
+
 function splitName(name = '') {
   const clean = String(name).replace(/\s+/g, ' ').trim();
   if (!clean) return { family: '', given: '' };
@@ -101,7 +107,8 @@ function doiSuffix(paper) {
 function gb(paper) {
   const title = paper.title || '';
   const where = venue(paper);
-  if (paper.source === 'arxiv') {
+  const kind = kindOf(paper);
+  if (kind === 'preprint') {
     return `${authorsGb(paper.authors)}. ${title}[J/OL]. arXiv: ${paper.arxiv?.id || ''}, ${paper.year || ''}. ${paper.url || ''}`.trim();
   }
   if (!where) {
@@ -111,24 +118,31 @@ function gb(paper) {
   const volume = paper.volume ? `${paper.volume}${paper.issue ? `(${paper.issue})` : ''}` : paper.issue ? `(${paper.issue})` : '';
   const place = [year, volume].filter(Boolean).join(', ');
   const tail = pages(paper) ? `: ${pages(paper)}` : '';
-  return `${authorsGb(paper.authors)}. ${title}[J]. ${where}, ${place}${tail}.${doiSuffix(paper)}`.replace(/,\s*\./g, '.');
+  const marker = kind === 'conference' ? '[C]' : '[J]';
+  return `${authorsGb(paper.authors)}. ${title}${marker}. ${where}, ${place}${tail}.${doiSuffix(paper)}`.replace(/,\s*\./g, '.');
 }
 
 function apa(paper) {
+  const kind = kindOf(paper);
   const year = paper.year ? `(${paper.year}).` : '(n.d.).';
   const where = venue(paper);
   const volume = paper.volume || '';
   const issue = paper.issue ? `(${paper.issue})` : '';
   const tail = pages(paper) ? `, ${pages(paper)}` : '';
   const link = paper.doi ? `https://doi.org/${paper.doi}` : paper.url || '';
-  if (paper.source === 'arxiv') {
+  if (kind === 'preprint') {
     return `${authorsApa(paper.authors)} ${year} ${paper.title}. arXiv. ${paper.url || ''}`.trim();
+  }
+  if (kind === 'conference') {
+    const pp = pages(paper) ? ` (pp. ${pages(paper)})` : '';
+    return `${authorsApa(paper.authors)} ${year} ${paper.title}. In ${where}${pp}. ${link}`.replace(/\s+/g, ' ').trim();
   }
   const journalPart = where ? `${where}${volume ? `, ${volume}` : ''}${issue}${tail}.` : '';
   return `${authorsApa(paper.authors)} ${year} ${paper.title}. ${journalPart} ${link}`.replace(/\s+/g, ' ').trim();
 }
 
 function mla(paper) {
+  const kind = kindOf(paper);
   const year = paper.year ? String(paper.year) : 'n.d.';
   const where = venue(paper);
   const vol = paper.volume ? `vol. ${paper.volume}` : '';
@@ -137,10 +151,14 @@ function mla(paper) {
   const details = [vol, no, year, pp].filter(Boolean).join(', ');
   const doi = paper.doi ? `DOI: ${paper.doi}.` : paper.url || '';
   if (!where) return `${authorsMla(paper.authors)}. "${paper.title}." ${year}. ${doi}`.trim();
+  if (kind === 'conference') {
+    return `${authorsMla(paper.authors)}. "${paper.title}." ${where}, ${[year, pp].filter(Boolean).join(', ')}. ${doi}`.replace(/\s+/g, ' ').trim();
+  }
   return `${authorsMla(paper.authors)}. "${paper.title}." ${where}, ${details}. ${doi}`.replace(/\s+/g, ' ').trim();
 }
 
 function ieee(paper, index = 1) {
+  const kind = kindOf(paper);
   const where = venue(paper);
   const vol = paper.volume ? `vol. ${paper.volume}` : '';
   const no = paper.issue ? `no. ${paper.issue}` : '';
@@ -148,7 +166,8 @@ function ieee(paper, index = 1) {
   const details = [vol, no, pp, paper.year ? String(paper.year) : ''].filter(Boolean).join(', ');
   const tail = paper.doi ? `, doi: ${paper.doi}.` : '.';
   if (!where) return `[${index}] ${authorsIeee(paper.authors)}, "${paper.title}," ${paper.year || ''}${tail}`.replace(/\s+/g, ' ').trim();
-  return `[${index}] ${authorsIeee(paper.authors)}, "${paper.title}," ${where}, ${details}${tail}`.replace(/\s+/g, ' ').trim();
+  const inPrefix = kind === 'conference' ? 'in ' : '';
+  return `[${index}] ${authorsIeee(paper.authors)}, "${paper.title}," ${inPrefix}${where}, ${details}${tail}`.replace(/\s+/g, ' ').trim();
 }
 
 export function bibtexKey(paper) {
@@ -165,7 +184,8 @@ function bibValue(value = '') {
 export function toBibtex(papers = []) {
   return papers
     .map((paper) => {
-      if (paper.source === 'arxiv') {
+      const kind = kindOf(paper);
+      if (kind === 'preprint') {
         return [
           `@misc{${bibtexKey(paper)},`,
           `  title = {${bibValue(paper.title)}},`,
@@ -174,6 +194,21 @@ export function toBibtex(papers = []) {
           `  eprint = {${paper.arxiv?.id || ''}},`,
           `  archivePrefix = {arXiv},`,
           paper.arxiv?.primaryCategory ? `  primaryClass = {${paper.arxiv.primaryCategory}},` : '',
+          paper.doi ? `  doi = {${paper.doi}},` : '',
+          `  url = {${paper.url || ''}},`,
+          '}',
+        ]
+          .filter(Boolean)
+          .join('\n');
+      }
+      if (kind === 'conference') {
+        return [
+          `@inproceedings{${bibtexKey(paper)},`,
+          `  title = {${bibValue(paper.title)}},`,
+          paper.authors?.length ? `  author = {${paper.authors.map(bibValue).join(' and ')}},` : '',
+          `  booktitle = {${bibValue(venue(paper))}},`,
+          `  year = {${paper.year || ''}},`,
+          paper.pages ? `  pages = {${paper.pages.replace(/-/g, '--')}},` : '',
           paper.doi ? `  doi = {${paper.doi}},` : '',
           `  url = {${paper.url || ''}},`,
           '}',
@@ -203,11 +238,13 @@ export function toBibtex(papers = []) {
 export function toRis(papers = []) {
   return papers
     .map((paper) => {
-      const lines = [paper.source === 'arxiv' ? 'TY  - GEN' : 'TY  - JOUR'];
+      const kind = kindOf(paper);
+      const lines = [kind === 'conference' ? 'TY  - CONF' : kind === 'preprint' ? 'TY  - GEN' : 'TY  - JOUR'];
       for (const author of paper.authors || []) lines.push(`AU  - ${author}`);
       lines.push(`TI  - ${paper.title || ''}`);
-      if (paper.journal?.name) lines.push(`JO  - ${paper.journal.name}`);
-      if (paper.source === 'arxiv') lines.push(`PB  - arXiv`);
+      if (kind === 'conference') lines.push(`T2  - ${venue(paper)}`);
+      else if (paper.journal?.name) lines.push(`JO  - ${paper.journal.name}`);
+      if (kind === 'preprint') lines.push(`PB  - arXiv`);
       if (paper.year) lines.push(`PY  - ${paper.year}`);
       if (paper.volume) lines.push(`VL  - ${paper.volume}`);
       if (paper.issue) lines.push(`IS  - ${paper.issue}`);

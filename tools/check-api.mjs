@@ -97,4 +97,18 @@ console.log('library remove:', removed.removed, 'items:', removed.items.length);
 const exported = await fetch(base + '/musee/api/export?format=md', { headers: { 'x-musee-token': token } });
 console.log('export md:', exported.status, exported.headers.get('content-type'));
 
+const conference = await call('/conference?conferenceId=cvpr&limit=2');
+console.log('conference papers:', conference.papers.length, 'kind:', conference.papers[0]?.kind);
+const conferenceCitation = await call('/cite', {
+  method: 'POST',
+  body: { papers: [conference.papers[0]], format: 'bibtex' },
+});
+console.log('conference bibtex:', conferenceCitation.text.split('\n')[0]);
+
+const french = await call('/translate', {
+  method: 'POST',
+  body: { title: 'Urban heat islands', abstract: 'A short abstract about cities and heat.', lang: 'fr' },
+});
+console.log('french title:', french.title);
+
 console.log('ALL OK');
