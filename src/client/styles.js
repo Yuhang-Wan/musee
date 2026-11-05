@@ -496,6 +496,71 @@ export const CSS = `
 .musee-pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--dsw-alias-bg-base); }
 .musee-pdf-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--dsw-alias-bg-layer-1); }
 
+/* Editorial direction: serif headlines, hairline rules, a dark lead visual. */
+.musee-root {
+  --musee-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", SimSun, serif;
+  --musee-accent: #b42318;
+}
+.musee-brand-name { font-family: var(--musee-serif); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.musee-tagline { text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }
+.musee-nav-btn { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
+.musee-header { border-bottom: 1px solid var(--dsw-alias-label-primary); }
+.musee-hero h1, .musee-display, .musee-venue-head h1, .musee-article h1, .musee-home-name, .musee-journal-name, .musee-paper-title, .musee-feed-title, .musee-rec-name { font-family: var(--musee-serif); }
+.musee-hero h1 { font-size: 34px; letter-spacing: -0.01em; }
+.musee-paper, .musee-journal-card, .musee-feed-card, .musee-rec-card { border-radius: 2px; }
+
+.musee-editorial-hero {
+  display: grid; grid-template-columns: 1.05fr 0.95fr; min-height: 380px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+.musee-hero-visual { position: relative; min-height: 380px; overflow: hidden; }
+.musee-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.musee-hero-copy { padding: 38px 42px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.musee-kicker { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--musee-accent); font-weight: 600; }
+.musee-display { font-size: clamp(28px, 3vw, 42px); line-height: 1.18; letter-spacing: -.015em; margin: 0; font-weight: 600; }
+.musee-display-link { border: 0; background: transparent; padding: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+.musee-display-link:hover { color: var(--musee-accent); }
+.musee-lead-venue { border: 0; background: transparent; padding: 0; text-align: left; color: var(--dsw-alias-label-secondary); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.musee-lead-authors { color: var(--dsw-alias-label-secondary); font-size: 13px; margin: 0; }
+.musee-lead-summary { color: var(--dsw-alias-label-secondary); font-size: 14px; line-height: 1.7; margin: 0 0 6px; max-width: 520px; }
+.musee-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.musee-editorial-section { margin-top: 34px; }
+.musee-section-rule { display: flex; align-items: baseline; gap: 12px; border-top: 1px solid var(--dsw-alias-label-primary); padding-top: 8px; margin-bottom: 16px; }
+.musee-section-rule h2 { margin: 0; font-family: var(--musee-serif); font-size: 22px; font-weight: 600; }
+.musee-section-rule span { color: var(--dsw-alias-label-secondary); font-size: 11px; letter-spacing: .04em; }
+
+.musee-feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); border-left: 1px solid var(--dsw-alias-border-l1); }
+.musee-feed-card {
+  border-right: 1px solid var(--dsw-alias-border-l1); border-bottom: 1px solid var(--dsw-alias-border-l1);
+  padding: 16px; background: var(--dsw-alias-bg-base); display: flex; flex-direction: column; min-width: 0;
+}
+.musee-feed-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.musee-feed-venue { flex: 1; text-align: left; border: 0; background: transparent; padding: 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--musee-accent); font-weight: 600; cursor: pointer; }
+.musee-feed-papers { display: flex; flex-direction: column; gap: 2px; }
+.musee-feed-paper { display: flex; gap: 10px; align-items: baseline; text-align: left; border: 0; background: transparent; padding: 6px 0; border-bottom: 1px solid var(--dsw-alias-border-l1); cursor: pointer; color: var(--dsw-alias-label-primary); }
+.musee-feed-paper:last-child { border-bottom: 0; }
+.musee-feed-paper.lead .musee-feed-title { font-family: var(--musee-serif); font-size: 18px; line-height: 1.35; font-weight: 600; }
+.musee-feed-title { flex: 1; font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.musee-feed-date { font-size: 10.5px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
+.musee-feed-more { align-self: flex-start; margin-top: 10px; border: 0; background: transparent; padding: 0; color: var(--musee-accent); font-size: 11px; cursor: pointer; }
+
+.musee-rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.musee-rec-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-base); }
+.musee-rec-main { display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; cursor: pointer; }
+.musee-rec-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.musee-rec-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
+.musee-rec-local { font-size: 11px; color: var(--dsw-alias-label-secondary); }
+.musee-rec-about { font-size: 11px; color: var(--dsw-alias-label-secondary); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+@media (max-width: 980px) {
+  .musee-editorial-hero { grid-template-columns: 1fr; }
+  .musee-hero-visual { min-height: 240px; }
+  .musee-hero-copy { padding: 24px 22px 30px; }
+  .musee-feed-grid { border-left: 0; }
+}
+
 
 @media (max-width: 920px) {
   .musee-rail { display: none; }

@@ -565,6 +565,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
         t,
         lang,
         feed: homeFeed,
+        recommended: boot?.recommended || [],
         loading: homeState === 'loading' || homeState === 'idle',
         error: homeState === 'error' ? homeError : '',
         followed,

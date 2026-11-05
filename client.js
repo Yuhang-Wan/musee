@@ -605,6 +605,71 @@ window.__ModuleLoader__.load({
     .musee-pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--dsw-alias-bg-base); }
     .musee-pdf-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--dsw-alias-bg-layer-1); }
 
+    /* Editorial direction: serif headlines, hairline rules, a dark lead visual. */
+    .musee-root {
+      --musee-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", SimSun, serif;
+      --musee-accent: #b42318;
+    }
+    .musee-brand-name { font-family: var(--musee-serif); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+    .musee-tagline { text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }
+    .musee-nav-btn { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
+    .musee-header { border-bottom: 1px solid var(--dsw-alias-label-primary); }
+    .musee-hero h1, .musee-display, .musee-venue-head h1, .musee-article h1, .musee-home-name, .musee-journal-name, .musee-paper-title, .musee-feed-title, .musee-rec-name { font-family: var(--musee-serif); }
+    .musee-hero h1 { font-size: 34px; letter-spacing: -0.01em; }
+    .musee-paper, .musee-journal-card, .musee-feed-card, .musee-rec-card { border-radius: 2px; }
+
+    .musee-editorial-hero {
+      display: grid; grid-template-columns: 1.05fr 0.95fr; min-height: 380px;
+      border: 1px solid var(--dsw-alias-border-l1);
+      background: var(--dsw-alias-bg-layer-1);
+    }
+    .musee-hero-visual { position: relative; min-height: 380px; overflow: hidden; }
+    .musee-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .musee-hero-copy { padding: 38px 42px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+    .musee-kicker { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--musee-accent); font-weight: 600; }
+    .musee-display { font-size: clamp(28px, 3vw, 42px); line-height: 1.18; letter-spacing: -.015em; margin: 0; font-weight: 600; }
+    .musee-display-link { border: 0; background: transparent; padding: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+    .musee-display-link:hover { color: var(--musee-accent); }
+    .musee-lead-venue { border: 0; background: transparent; padding: 0; text-align: left; color: var(--dsw-alias-label-secondary); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+    .musee-lead-authors { color: var(--dsw-alias-label-secondary); font-size: 13px; margin: 0; }
+    .musee-lead-summary { color: var(--dsw-alias-label-secondary); font-size: 14px; line-height: 1.7; margin: 0 0 6px; max-width: 520px; }
+    .musee-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+    .musee-editorial-section { margin-top: 34px; }
+    .musee-section-rule { display: flex; align-items: baseline; gap: 12px; border-top: 1px solid var(--dsw-alias-label-primary); padding-top: 8px; margin-bottom: 16px; }
+    .musee-section-rule h2 { margin: 0; font-family: var(--musee-serif); font-size: 22px; font-weight: 600; }
+    .musee-section-rule span { color: var(--dsw-alias-label-secondary); font-size: 11px; letter-spacing: .04em; }
+
+    .musee-feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); border-left: 1px solid var(--dsw-alias-border-l1); }
+    .musee-feed-card {
+      border-right: 1px solid var(--dsw-alias-border-l1); border-bottom: 1px solid var(--dsw-alias-border-l1);
+      padding: 16px; background: var(--dsw-alias-bg-base); display: flex; flex-direction: column; min-width: 0;
+    }
+    .musee-feed-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .musee-feed-venue { flex: 1; text-align: left; border: 0; background: transparent; padding: 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--musee-accent); font-weight: 600; cursor: pointer; }
+    .musee-feed-papers { display: flex; flex-direction: column; gap: 2px; }
+    .musee-feed-paper { display: flex; gap: 10px; align-items: baseline; text-align: left; border: 0; background: transparent; padding: 6px 0; border-bottom: 1px solid var(--dsw-alias-border-l1); cursor: pointer; color: var(--dsw-alias-label-primary); }
+    .musee-feed-paper:last-child { border-bottom: 0; }
+    .musee-feed-paper.lead .musee-feed-title { font-family: var(--musee-serif); font-size: 18px; line-height: 1.35; font-weight: 600; }
+    .musee-feed-title { flex: 1; font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .musee-feed-date { font-size: 10.5px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
+    .musee-feed-more { align-self: flex-start; margin-top: 10px; border: 0; background: transparent; padding: 0; color: var(--musee-accent); font-size: 11px; cursor: pointer; }
+
+    .musee-rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+    .musee-rec-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-base); }
+    .musee-rec-main { display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; cursor: pointer; }
+    .musee-rec-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .musee-rec-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
+    .musee-rec-local { font-size: 11px; color: var(--dsw-alias-label-secondary); }
+    .musee-rec-about { font-size: 11px; color: var(--dsw-alias-label-secondary); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    @media (max-width: 980px) {
+      .musee-editorial-hero { grid-template-columns: 1fr; }
+      .musee-hero-visual { min-height: 240px; }
+      .musee-hero-copy { padding: 24px 22px 30px; }
+      .musee-feed-grid { border-left: 0; }
+    }
+
 
     @media (max-width: 920px) {
       .musee-rail { display: none; }
@@ -1231,6 +1296,11 @@ window.__ModuleLoader__.load({
           ["#0b1120", "#dc2626"],
           ["#111827", "#d97706"],
           ["#071a2b", "#0e7490"]
+        ],
+        flagship: [
+          ["#0f172a", "#b45309"],
+          ["#111827", "#0f766e"],
+          ["#1c1917", "#9a3412"]
         ]
       };
       function hash(value = "") {
@@ -1281,6 +1351,13 @@ window.__ModuleLoader__.load({
         "nav.library": "Library",
         "nav.home": "Home",
         "home.title": "Home",
+        "home.kicker": "MUSEE · READING DESK",
+        "home.headline": "Read journals into a knowledge base of your own",
+        "home.read": "Read this paper",
+        "home.openJournal": "Open journal",
+        "home.followedSection": "Your journals",
+        "home.recommended": "Recommended",
+        "home.recommendedHint": "Nature, Science, Cell and their sister journals",
         "home.subtitle": "Latest papers from the journals you follow.",
         "home.empty": "You are not following any journal yet. Follow journals to see their newest papers here.",
         "home.browse": "Browse journals",
@@ -1435,6 +1512,13 @@ window.__ModuleLoader__.load({
         "nav.library": "我的库",
         "nav.home": "首页",
         "home.title": "首页",
+        "home.kicker": "MUSEE · 期刊阅读台",
+        "home.headline": "把期刊读成自己的知识库",
+        "home.read": "阅读这篇",
+        "home.openJournal": "进入期刊",
+        "home.followedSection": "关注动态",
+        "home.recommended": "推荐期刊",
+        "home.recommendedHint": "Nature / Science / Cell 及其子刊",
         "home.subtitle": "你关注的期刊，最新论文都汇总在这里。",
         "home.empty": "还没有关注期刊。关注几本你常读的期刊，最新论文会出现在这里。",
         "home.browse": "去发现期刊",
@@ -1589,6 +1673,13 @@ window.__ModuleLoader__.load({
         "nav.library": "Bibliothèque",
         "nav.home": "Accueil",
         "home.title": "Accueil",
+        "home.kicker": "MUSEE · CABINET DE LECTURE",
+        "home.headline": "Faites de vos revues une bibliothèque vivante",
+        "home.read": "Lire cet article",
+        "home.openJournal": "Ouvrir la revue",
+        "home.followedSection": "Vos revues",
+        "home.recommended": "Recommandées",
+        "home.recommendedHint": "Nature, Science, Cell et leurs revues sœurs",
         "home.subtitle": "Les derniers articles des revues que vous suivez.",
         "home.empty": "Vous ne suivez encore aucune revue. Suivez des revues pour voir leurs nouveautés ici.",
         "home.browse": "Parcourir les revues",
@@ -4124,66 +4215,119 @@ window.__ModuleLoader__.load({
         if (!venue || lang === "en") return "";
         return (lang === "zh" ? venue.nameZh : venue.nameFr) || "";
       }
-      function Home({ t, lang, feed, loading, error, followed, onOpenJournal, onOpenPaper, onDiscover, onToggleFollow, titleTranslations }) {
-        const header = h(
-          "div",
-          { className: "musee-hero" },
-          h("h1", null, t("home.title")),
-          h("p", null, t("home.subtitle"))
-        );
-        if (loading && !feed.length) {
-          return h("div", { className: "musee-page" }, header, h(Loading, { label: t("home.loading") }));
-        }
-        if (error) {
-          return h("div", { className: "musee-page" }, header, h(ErrorBanner, { message: error }));
-        }
-        if (!feed.length) {
-          return h(
-            "div",
-            { className: "musee-page" },
-            header,
-            h(
-              "div",
-              { className: "musee-home-empty" },
-              h(Empty, { title: t("home.empty") }),
-              h(Button, { variant: "primary", onClick: onDiscover }, t("home.browse"))
-            )
-          );
-        }
+      function localizedAbout(venue, lang) {
+        if (!venue) return "";
+        if (lang === "zh") return venue.aboutZh || venue.about || "";
+        if (lang === "fr") return venue.aboutFr || venue.about || "";
+        return venue.about || "";
+      }
+      function shortAuthors2(authors = []) {
+        if (authors.length <= 3) return authors.join(", ");
+        return `${authors.slice(0, 3).join(", ")}, et al.`;
+      }
+      function HeroArt() {
         return h(
-          "div",
-          { className: "musee-page" },
-          header,
+          "svg",
+          { viewBox: "0 0 720 520", preserveAspectRatio: "xMidYMid slice", className: "musee-hero-art", "aria-hidden": "true" },
+          h(
+            "defs",
+            null,
+            h("linearGradient", { id: "musee-ink", x1: "0", y1: "0", x2: "1", y2: "1" }, h("stop", { offset: "0", stopColor: "#081018" }), h("stop", { offset: "1", stopColor: "#16324a" })),
+            h("linearGradient", { id: "musee-gold", x1: "0", y1: "0", x2: "1", y2: "1" }, h("stop", { offset: "0", stopColor: "#f0d49b" }), h("stop", { offset: "1", stopColor: "#b7791f" }))
+          ),
+          h("rect", { width: "720", height: "520", fill: "url(#musee-ink)" }),
+          h(
+            "g",
+            { opacity: "0.22", stroke: "#f0d49b", fill: "none", strokeWidth: "1.2" },
+            h("circle", { cx: "560", cy: "150", r: "120" }),
+            h("circle", { cx: "560", cy: "150", r: "190" }),
+            h("circle", { cx: "560", cy: "150", r: "260" }),
+            h("path", { d: "M40 420 C 180 340, 300 470, 450 360 S 640 300, 720 340" }),
+            h("path", { d: "M40 455 C 190 380, 320 500, 470 390 S 650 330, 720 370" })
+          ),
+          h(
+            "g",
+            { transform: "translate(86 118) rotate(-7)" },
+            h("path", { d: "M0 0 L250 24 L232 330 L0 300 Z", fill: "#f7f0df", opacity: "0.94" }),
+            h("path", { d: "M18 34 L220 54", stroke: "#0b1220", strokeWidth: "2", opacity: "0.28" }),
+            h("path", { d: "M18 58 L190 76", stroke: "#0b1220", strokeWidth: "2", opacity: "0.18" }),
+            h("path", { d: "M18 82 L210 98", stroke: "#0b1220", strokeWidth: "2", opacity: "0.18" })
+          ),
+          h(
+            "g",
+            { transform: "translate(300 96) rotate(5)" },
+            h("path", { d: "M0 0 L245 18 L260 318 L12 330 Z", fill: "#10324a", opacity: "0.96", stroke: "#f0d49b", strokeWidth: "1.5" }),
+            h("circle", { cx: "120", cy: "120", r: "54", fill: "none", stroke: "url(#musee-gold)", strokeWidth: "1.4" }),
+            h("path", { d: "M40 212 L215 196 M40 236 L200 222 M40 260 L180 248", stroke: "#f0d49b", strokeWidth: "1.2", opacity: "0.55" })
+          ),
+          h("text", { x: "40", y: "470", fill: "#f7f0df", opacity: "0.08", fontFamily: "Georgia, serif", fontSize: "190", fontWeight: "700" }, "M"),
+          h("text", { x: "92", y: "88", fill: "#f0d49b", opacity: "0.85", fontFamily: "Georgia, serif", fontSize: "13", letterSpacing: "6" }, "MUSEE")
+        );
+      }
+      function Home({ t, lang, feed, recommended, loading, error, followed, onOpenJournal, onOpenPaper, onDiscover, onToggleFollow, titleTranslations }) {
+        const leadEntry = feed.find((entry) => entry.papers.length > 0);
+        const leadPaper = leadEntry?.papers[0];
+        const leadJournal = leadEntry?.journal;
+        const hero = h(
+          "section",
+          { className: "musee-editorial-hero" },
+          h("div", { className: "musee-hero-visual" }, h(HeroArt)),
           h(
             "div",
-            { className: "musee-home-grid" },
+            { className: "musee-hero-copy" },
+            h("div", { className: "musee-kicker" }, t("home.kicker")),
+            leadPaper ? h(
+              "div",
+              null,
+              h(
+                "button",
+                { type: "button", className: "musee-lead-venue", onClick: () => onOpenJournal(leadJournal) },
+                `${leadJournal.name}${leadPaper.date ? ` · ${leadPaper.date}` : ""}`
+              ),
+              h(
+                "h1",
+                { className: "musee-display" },
+                h("button", { type: "button", className: "musee-display-link", onClick: () => onOpenPaper(leadPaper) }, titleTranslations[leadPaper.id] || leadPaper.title)
+              ),
+              leadPaper.authors?.length ? h("p", { className: "musee-lead-authors" }, shortAuthors2(leadPaper.authors)) : null,
+              h(
+                "div",
+                { className: "musee-hero-actions" },
+                h(Button, { variant: "primary", onClick: () => onOpenPaper(leadPaper) }, t("home.read")),
+                h(Button, { onClick: () => onOpenJournal(leadJournal) }, t("home.openJournal"))
+              )
+            ) : h(
+              "div",
+              null,
+              h("h1", { className: "musee-display" }, t("home.headline")),
+              h("p", { className: "musee-lead-summary" }, t("home.empty")),
+              h(Button, { variant: "primary", onClick: onDiscover }, t("home.browse"))
+            )
+          )
+        );
+        const followedSection = feed.length ? h(
+          "section",
+          { className: "musee-editorial-section" },
+          h(
+            "div",
+            { className: "musee-section-rule" },
+            h("h2", null, t("home.followedSection")),
+            h("span", null, `${feed.length}`)
+          ),
+          h(
+            "div",
+            { className: "musee-feed-grid" },
             feed.map(
               ({ journal, papers }) => h(
-                "div",
-                { className: "musee-home-card", key: journal.id },
+                "article",
+                { className: "musee-feed-card", key: journal.id },
                 h(
                   "div",
-                  {
-                    className: "musee-home-head",
-                    role: "button",
-                    tabIndex: 0,
-                    onClick: () => onOpenJournal(journal),
-                    onKeyDown: (event) => {
-                      if (event.key === "Enter") onOpenJournal(journal);
-                    }
-                  },
-                  h(JournalCover, { venue: journal, kind: journal.discipline, size: "sm", issue: papers[0]?.year ? String(papers[0].year) : "" }),
+                  { className: "musee-feed-head" },
                   h(
-                    "div",
-                    { className: "musee-home-info" },
-                    h("div", { className: "musee-home-name" }, journal.name),
-                    localizedName(journal, lang) ? h("div", { className: "musee-home-local" }, localizedName(journal, lang)) : null,
-                    h(
-                      "div",
-                      { className: "musee-home-meta" },
-                      h("span", null, journal.issn),
-                      journal.userIf ? h("span", null, `${t("metrics.if")} ${journal.userIf}`) : null
-                    )
+                    "button",
+                    { type: "button", className: "musee-feed-venue", onClick: () => onOpenJournal(journal) },
+                    journal.name
                   ),
                   h(
                     "button",
@@ -4192,30 +4336,82 @@ window.__ModuleLoader__.load({
                       className: `musee-follow-btn ${followed.has(journal.id) ? "active" : ""}`,
                       title: followed.has(journal.id) ? t("home.following") : t("home.follow"),
                       "aria-label": followed.has(journal.id) ? t("home.following") : t("home.follow"),
-                      onClick: (event) => {
-                        event.stopPropagation();
-                        onToggleFollow(journal);
-                      }
+                      onClick: () => onToggleFollow(journal)
                     },
                     h(IconStar, { filled: followed.has(journal.id) })
                   )
                 ),
-                h(
+                papers.length ? h(
                   "div",
-                  { className: "musee-home-papers" },
-                  papers.length ? papers.map(
-                    (paper) => h(
+                  { className: "musee-feed-papers" },
+                  papers.map(
+                    (paper, index) => h(
                       "button",
-                      { key: paper.id, type: "button", className: "musee-home-paper", onClick: () => onOpenPaper(paper) },
-                      h("span", { className: "musee-home-paper-title" }, titleTranslations[paper.id] || paper.title),
-                      h("span", { className: "musee-home-paper-date" }, paper.date || "")
+                      { key: paper.id, type: "button", className: `musee-feed-paper ${index === 0 ? "lead" : ""}`, onClick: () => onOpenPaper(paper) },
+                      h("span", { className: "musee-feed-title" }, titleTranslations[paper.id] || paper.title),
+                      h("span", { className: "musee-feed-date" }, paper.date || "")
                     )
-                  ) : h("div", { className: "musee-home-nopapers" }, t("home.noPapers"))
-                ),
-                h("button", { type: "button", className: "musee-home-more", onClick: () => onOpenJournal(journal) }, `${t("home.viewAll")} →`)
+                  )
+                ) : h("div", { className: "musee-home-nopapers" }, t("home.noPapers")),
+                h("button", { type: "button", className: "musee-feed-more", onClick: () => onOpenJournal(journal) }, `${t("home.viewAll")} →`)
               )
             )
           )
+        ) : null;
+        const recommendedSection = recommended.length ? h(
+          "section",
+          { className: "musee-editorial-section" },
+          h(
+            "div",
+            { className: "musee-section-rule" },
+            h("h2", null, t("home.recommended")),
+            h("span", null, t("home.recommendedHint"))
+          ),
+          h(
+            "div",
+            { className: "musee-rec-grid" },
+            recommended.map(
+              (journal) => h(
+                "article",
+                { key: journal.id, className: "musee-rec-card" },
+                h(
+                  "button",
+                  { type: "button", className: "musee-rec-main", onClick: () => onOpenJournal(journal) },
+                  h(JournalCover, { venue: journal, kind: journal.discipline, size: "sm" }),
+                  h(
+                    "span",
+                    { className: "musee-rec-info" },
+                    h("span", { className: "musee-rec-name" }, journal.name),
+                    localizedName(journal, lang) ? h("span", { className: "musee-rec-local" }, localizedName(journal, lang)) : null,
+                    h("span", { className: "musee-rec-about" }, localizedAbout(journal, lang))
+                  )
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: `musee-follow-btn ${followed.has(journal.id) ? "active" : ""}`,
+                    title: followed.has(journal.id) ? t("home.following") : t("home.follow"),
+                    "aria-label": followed.has(journal.id) ? t("home.following") : t("home.follow"),
+                    onClick: () => onToggleFollow(journal)
+                  },
+                  h(IconStar, { filled: followed.has(journal.id) })
+                )
+              )
+            )
+          )
+        ) : null;
+        if (loading && !feed.length) {
+          return h("div", { className: "musee-page musee-editorial" }, hero, h(Loading, { label: t("home.loading") }));
+        }
+        return h(
+          "div",
+          { className: "musee-page musee-editorial" },
+          hero,
+          error ? h(ErrorBanner, { message: error }) : null,
+          followedSection,
+          !feed.length && !recommended.length ? h(Empty, { title: t("home.empty") }) : null,
+          recommendedSection
         );
       }
 
@@ -4267,7 +4463,7 @@ window.__ModuleLoader__.load({
         if (!venue || lang === "en") return "";
         return (lang === "zh" ? venue.nameZh : venue.nameFr) || "";
       }
-      function localizedAbout(venue, lang) {
+      function localizedAbout2(venue, lang) {
         if (!venue) return "";
         if (lang === "zh") return venue.aboutZh || venue.about || "";
         if (lang === "fr") return venue.aboutFr || venue.about || "";
@@ -4589,7 +4785,7 @@ window.__ModuleLoader__.load({
                 ) : null
               ),
               local ? h("div", { className: "musee-venue-local" }, local) : null,
-              h("p", { className: "musee-venue-about" }, localizedAbout(venue, lang)),
+              h("p", { className: "musee-venue-about" }, localizedAbout2(venue, lang)),
               h(
                 "div",
                 { className: "musee-venue-meta" },
@@ -4685,7 +4881,7 @@ window.__ModuleLoader__.load({
                         )
                       ),
                       localizedName2(journal, lang) ? h("div", { className: "musee-journal-local" }, localizedName2(journal, lang)) : null,
-                      h("div", { className: "musee-journal-about" }, localizedAbout(journal, lang)),
+                      h("div", { className: "musee-journal-about" }, localizedAbout2(journal, lang)),
                       h(
                         "div",
                         { className: "musee-journal-meta" },
@@ -4720,7 +4916,7 @@ window.__ModuleLoader__.load({
                       { className: "musee-journal-body" },
                       h("div", { className: "musee-journal-name" }, conference.name),
                       localizedName2(conference, lang) ? h("div", { className: "musee-journal-local" }, localizedName2(conference, lang)) : null,
-                      h("div", { className: "musee-journal-about" }, localizedAbout(conference, lang)),
+                      h("div", { className: "musee-journal-about" }, localizedAbout2(conference, lang)),
                       h(
                         "div",
                         { className: "musee-journal-meta" },
@@ -4751,6 +4947,7 @@ window.__ModuleLoader__.load({
               t,
               lang,
               feed: homeFeed,
+              recommended: boot?.recommended || [],
               loading: homeState === "loading" || homeState === "idle",
               error: homeState === "error" ? homeError : "",
               followed,

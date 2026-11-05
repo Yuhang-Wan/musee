@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, VERSION, journalsFor } from './catalog.js';
+import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, RECOMMENDED_JOURNALS, VERSION, journalsFor } from './catalog.js';
 import { latestByCategory } from './arxiv.js';
 import { cite } from './cite.js';
 import { fetchArxivFulltext } from './fulltext.js';
@@ -120,6 +120,10 @@ export function createMusee(ctx, config = {}) {
         version: VERSION,
         disciplines: disciplinePayload(store),
         conferences: CONFERENCES,
+        recommended: RECOMMENDED_JOURNALS.map((journal) => ({
+          ...journal,
+          userIf: store.impactFactor(journal.issn),
+        })),
         followedJournals: store.followedJournals(),
         llm: translator.available(),
         route: translator.route(),

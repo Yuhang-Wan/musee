@@ -3,7 +3,7 @@
  * Source ids are OpenAlex `S...` identifiers resolved from each venue's ISSN or name.
  * Descriptions are original Musee scope notes, not publisher copy.
  */
-export const VERSION = '0.4.1';
+export const VERSION = '0.5.0';
 
 export const DISCIPLINES = [
   {
@@ -265,6 +265,57 @@ export const JOURNALS = [
     aboutZh: '自主系统、感知、规划与控制。',
     aboutFr: 'Systèmes autonomes, perception, planification et commande.',
   },
+
+  // Flagship and multidisciplinary journals, surfaced as recommendations on the home page.
+  {
+    id: 'nature', discipline: 'flagship', recommended: true, name: 'Nature', short: 'NAT', issn: '0028-0836', openalex: 'S137773608',
+    nameZh: '自然', nameFr: 'Nature',
+    about: 'Multidisciplinary flagship journal covering all areas of natural science.',
+    aboutZh: '跨学科旗舰期刊，覆盖自然科学各领域。',
+    aboutFr: 'Revue phare multidisciplinaire couvrant toutes les sciences de la nature.',
+  },
+  {
+    id: 'science', discipline: 'flagship', recommended: true, name: 'Science', short: 'SCI', issn: '0036-8075', openalex: 'S3880285',
+    nameZh: '科学', nameFr: 'Science',
+    about: 'AAAS flagship for peer-reviewed research across scientific disciplines.',
+    aboutZh: '美国科学促进会旗舰期刊，覆盖多学科同行评议研究。',
+    aboutFr: 'Revue phare de l’AAAS pour la recherche évaluée par les pairs dans toutes les disciplines.',
+  },
+  {
+    id: 'cell', discipline: 'flagship', recommended: true, name: 'Cell', short: 'CELL', issn: '0092-8674', openalex: 'S110447773',
+    nameZh: '细胞', nameFr: 'Cell',
+    about: 'Molecular and cellular biology, including translational and disease research.',
+    aboutZh: '分子与细胞生物学，涵盖转化医学与疾病研究。',
+    aboutFr: 'Biologie moléculaire et cellulaire, y compris la recherche translationnelle et sur les maladies.',
+  },
+  {
+    id: 'nature-communications', discipline: 'flagship', recommended: true, name: 'Nature Communications', short: 'NC', issn: '2041-1723', openalex: 'S64187185',
+    nameZh: '自然·通讯', nameFr: 'Nature Communications',
+    about: 'Open-access multidisciplinary research across the natural sciences.',
+    aboutZh: '开放获取的跨学科自然科学研究。',
+    aboutFr: 'Recherche multidisciplinaire en libre accès dans les sciences de la nature.',
+  },
+  {
+    id: 'science-advances', discipline: 'flagship', recommended: true, name: 'Science Advances', short: 'SA', issn: '2375-2548', openalex: 'S2737427234',
+    nameZh: '科学·进展', nameFr: 'Science Advances',
+    about: 'Open-access multidisciplinary research published by AAAS.',
+    aboutZh: 'AAAS 出版的开放获取跨学科研究。',
+    aboutFr: 'Recherche multidisciplinaire en libre accès publiée par l’AAAS.',
+  },
+  {
+    id: 'cell-reports', discipline: 'flagship', recommended: true, name: 'Cell Reports', short: 'CR', issn: '2211-1247', openalex: 'S169236886',
+    nameZh: '细胞报告', nameFr: 'Cell Reports',
+    about: 'Open-access life-science research spanning cell biology and disease.',
+    aboutZh: '开放获取的生命科学研究，覆盖细胞生物学与疾病。',
+    aboutFr: 'Recherche en sciences de la vie en libre accès, de la biologie cellulaire aux maladies.',
+  },
+  {
+    id: 'nature-cities', discipline: 'flagship', recommended: true, name: 'Nature Cities', short: 'NCITY', issn: '2731-9997', openalex: 'S4390297069',
+    nameZh: '自然·城市', nameFr: 'Nature Cities',
+    about: 'Interdisciplinary urban research, from planning and governance to climate.',
+    aboutZh: '跨学科城市研究，从规划治理到气候适应。',
+    aboutFr: 'Recherche urbaine interdisciplinaire, de la planification au climat.',
+  },
 ];
 
 export const CONFERENCES = [
@@ -349,6 +400,21 @@ export const CONFERENCES = [
 
 export const JOURNALS_BY_ID = new Map(JOURNALS.map((journal) => [journal.id, journal]));
 export const CONFERENCES_BY_ID = new Map(CONFERENCES.map((conference) => [conference.id, conference]));
+
+export const RECOMMENDED_IDS = [
+  'nature',
+  'science',
+  'cell',
+  'nature-communications',
+  'science-advances',
+  'cell-reports',
+  'nature-cities',
+  'nature-physics',
+  'nature-mi',
+  'science-robotics',
+];
+
+export const RECOMMENDED_JOURNALS = RECOMMENDED_IDS.map((id) => JOURNALS_BY_ID.get(id)).filter(Boolean);
 
 export function journalsFor(disciplineId) {
   return JOURNALS.filter((journal) => journal.discipline === disciplineId);

@@ -11,6 +11,8 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 ## 功能
 
 - **三个学科，32 本期刊**：城市研究、物理、人工智能与机器人；期刊目录内置 ISSN 与 OpenAlex source id。
+- **编辑式首页**：Science 风格的衬线标题、细线分隔和原创封面插画；关注期刊的最新论文以头条 + 卡片呈现。
+- **推荐期刊**：Nature、Science、Cell 及 Nature Communications、Science Advances、Cell Reports、Nature Cities 等 10 本旗舰/子刊，均可一键关注。
 - **首页动态**：打开 Musee 先看到首页，汇总你关注期刊的最新 3 篇论文；期刊卡片上的星标即可关注/取消关注。
 - **图文期刊卡片**：每本期刊有原创排版封面（随学科变色的书脊设计）、Musee 撰写的范围简介、ISSN 与收录量；详情页显示最新一卷/期。
 - **引用指标**：期刊页显示 OpenAlex 的两年平均被引与 h-index；支持从本地导入 JCR 影响因子（需自备授权数据，Musee 不内置）。
@@ -98,7 +100,7 @@ JCR 影响因子是 Clarivate 的版权数据，Musee 不内置、也不抓取�
 - **期刊简介是 Musee 撰写的范围说明**，不是出版商官方文案；官方描述可点“期刊官网”前往。
 - 顶会论文来自 OpenAlex 的会议论文集；ICML、ICLR、CoRL 等以 OpenReview 为主的会议收录不完整，后续会补其他数据源。
 - **全文来自 arXiv HTML**：正文、图片、表格和参考文献由 arXiv 页面解析，图片直接指向 arXiv 的公开地址；Musee 不转存、不再分发这些内容。没有 HTML 全文的论文会给出 PDF 链接。
-- **PDF 预览**：arXiv PDF 通过本地同源路由转发给页面内的 Chromium PDF 查看器，不落盘、不快缓存；其他出版商的付费或登录 PDF 不做代理。
+- **PDF 预览**：arXiv PDF 通过本地同源路由转发给页面内的 Chromium PDF 查看器，不落盘、不快缓存；其他出版商的付费或登录 PDF 不做代理。当前内嵌查看器不支持在 PDF 上直接标注或划词翻译；需要自绘 PDF.js 阅读器，排在下一版。
 - 渲染前会在浏览器端用白名单清洗 HTML（移除脚本、样式与表单），只保留正文、图表、公式和链接。
 - 引用格式由程序生成，投稿前请按目标期刊要求核对。
 
@@ -152,10 +154,11 @@ cordis.patch.yml      插件清单
 
 ## 路线图
 
-- **v0.4 首页与指标（当前）**：关注期刊首页、OpenAlex 引用指标、本地 IF 导入、arXiv PDF 内置预览。
-- **v0.5 深读与批注**：段落级高亮/批注、PMC JATS 适配、阅读进度与章节笔记。
-- **v0.6 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
-- **v0.7 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
+- **v0.5 编辑式首页（当前）**：Science 风格视觉、原创首页插画、Nature/Science/Cell 旗舰期刊推荐。
+- **v0.6 PDF 标注与翻译**：自绘 PDF.js 阅读器，文本层选择、段落高亮、划词翻译与页边批注。
+- **v0.7 深读与批注**：HTML 阅读器段落高亮、PMC JATS 适配、阅读进度与章节笔记。
+- **v0.8 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
+- **v0.9 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
 - **v1.0 全学科**：可导入的期刊目录、更多数据源、npm 发布与完整文档。
 
 欢迎在 Issues 里补充你所在领域的期刊清单和使用场景。
