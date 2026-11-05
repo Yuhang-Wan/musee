@@ -21,7 +21,7 @@ function tr(t, key, params) {
   return tFormat(t(key), params);
 }
 
-export function Reader({ paper, t, targetLang, onBack }) {
+export function Reader({ paper, t, targetLang, onBack, onPdf }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,7 +126,9 @@ export function Reader({ paper, t, targetLang, onBack }) {
       : null,
     data?.absUrl ? h('a', { className: 'musee-btn sm', href: data.absUrl, target: '_blank', rel: 'noreferrer' }, 'arXiv') : null,
     data?.pdfUrl
-      ? h('a', { className: 'musee-btn sm', href: data.pdfUrl, target: '_blank', rel: 'noreferrer' }, h(IconExternal), 'PDF')
+      ? onPdf
+        ? h(Button, { size: 'sm', onClick: onPdf }, 'PDF')
+        : h('a', { className: 'musee-btn sm', href: data.pdfUrl, target: '_blank', rel: 'noreferrer' }, h(IconExternal), 'PDF')
       : null,
   );
 

@@ -26,10 +26,22 @@ export async function createStore(dataDir) {
 
   const libraryPath = path.join(dataDir, 'library.json');
   const cachePath = path.join(cacheDir, 'translations.json');
+  const preferencesPath = path.join(dataDir, 'preferences.json');
+  const impactPath = path.join(dataDir, 'impact-factors.json');
 
   let library = await readJson(libraryPath, { version: 1, items: [] });
   if (!Array.isArray(library.items)) library = { version: 1, items: [] };
   library.items = library.items.filter((item) => item && item.id && item.title);
+
+  let preferences = await readJson(preferencesPath, { version: 1, followedJournals: [] });
+  if (!Array.isArray(preferences.followedJournals)) preferences.followedJournals = [];
+  preferences.followedJournals = [...new Set(preferences.followedJournals.filter((id) => typeof id === 'string'))];
+
+  const impactFactors = {};
+  for (const [issn, value] of Object.entries(await readJson(impactPath, {}))) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) impactFactors[String(issn)] = numeric;
+  }
 
   const translations = new Map(Object.entries(await readJson(cachePath, {})));
   let cacheTimer = null;
@@ -44,8 +56,35 @@ export async function createStore(dataDir) {
     await writeAtomic(libraryPath, JSON.stringify(library, null, 2));
   }
 
+  async function persistPreferences() {
+    await writeAtomic(preferencesPath, JSON.stringify(preferences, null, 2));
+  }
+
   function list() {
     return library.items;
+  }
+
+  function followedJournals() {
+    return [...preferences.followedJournals];
+  }
+
+  async function followJournal(id) {
+    if (id && !preferences.followedJournals.includes(id)) {
+      preferences.followedJournals.push(id);
+      await persistPreferences();
+    }
+    return followedJournals();
+  }
+
+  async function unfollowJournal(id) {
+    const before = preferences.followedJournals.length;
+    preferences.followedJournals = preferences.followedJournals.filter((entry) => entry !== id);
+    if (preferences.followedJournals.length !== before) await persistPreferences();
+    return followedJournals();
+  }
+
+  function impactFactor(issn) {
+    return impactFactors[String(issn || '')] ?? null;
   }
 
   async function savePaper(paper) {
@@ -135,5 +174,18 @@ export async function createStore(dataDir) {
     },
   };
 
-  return { dataDir, libraryPath, list, savePaper, updateItem, removeItem, exportMarkdown, cache };
+  return {
+    dataDir,
+    libraryPath,
+    list,
+    savePaper,
+    updateItem,
+    removeItem,
+    exportMarkdown,
+    cache,
+    followedJournals,
+    followJournal,
+    unfollowJournal,
+    impactFactor,
+  };
 }

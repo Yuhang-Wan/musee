@@ -11,7 +11,10 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 ## 功能
 
 - **三个学科，32 本期刊**：城市研究、物理、人工智能与机器人；期刊目录内置 ISSN 与 OpenAlex source id。
+- **首页动态**：打开 Musee 先看到首页，汇总你关注期刊的最新 3 篇论文；期刊卡片上的星标即可关注/取消关注。
 - **图文期刊卡片**：每本期刊有原创排版封面（随学科变色的书脊设计）、Musee 撰写的范围简介、ISSN 与收录量；详情页显示最新一卷/期。
+- **引用指标**：期刊页显示 OpenAlex 的两年平均被引与 h-index；支持从本地导入 JCR 影响因子（需自备授权数据，Musee 不内置）。
+- **PDF 内置阅读**：有 arXiv 版本的论文可在 DSH 面板内用 PDF 查看器打开，不跳外部；非 arXiv 论文仍打开 DOI 原文。
 - **往期浏览**：期刊页可按年份筛选（带每年篇数）、显示总篇数与卷/期，底部「加载更多」逐页翻看历史论文。
 - **标题翻译**：论文列表自动把标题批量译成当前翻译语言，缓存在本地；设置里可一键关闭，关闭后不再调用模型。
 - **OA 全文阅读**：论文有 arXiv 版本时出现「全文阅读」；左侧章节目录，正文含图、表、公式与参考文献，点图可放大，正文引用可跳到对应文献，支持按章节做学术翻译。
@@ -68,8 +71,23 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 数据目录内容：
 
 - `library.json`：收藏、状态、标签、笔记；
+- `preferences.json`：关注的期刊；
+- `impact-factors.json`：可选的本地影响因子表（见下）；
 - `cache/translations.json`：按内容哈希缓存的译文；
 - `runtime.json`：本次运行的本地 API token（权限 0600，仅供调试或后续 CLI 使用）。
+
+### 本地导入影响因子
+
+JCR 影响因子是 Clarivate 的版权数据，Musee 不内置、也不抓取。若你已有授权数据，可在 `~/.dsh/musee/impact-factors.json` 按 ISSN 写入：
+
+```json
+{
+  "2522-5839": 18.8,
+  "0042-0980": 3.4
+}
+```
+
+重启插件后，期刊卡片和详情页会显示 `IF`；没有本地数据的期刊显示 OpenAlex 的两年平均被引（`2yr 被引`）与 `h-index`，并明确标注不是 JCR IF。
 
 ## 数据与合规
 
@@ -80,6 +98,7 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - **期刊简介是 Musee 撰写的范围说明**，不是出版商官方文案；官方描述可点“期刊官网”前往。
 - 顶会论文来自 OpenAlex 的会议论文集；ICML、ICLR、CoRL 等以 OpenReview 为主的会议收录不完整，后续会补其他数据源。
 - **全文来自 arXiv HTML**：正文、图片、表格和参考文献由 arXiv 页面解析，图片直接指向 arXiv 的公开地址；Musee 不转存、不再分发这些内容。没有 HTML 全文的论文会给出 PDF 链接。
+- **PDF 预览**：arXiv PDF 通过本地同源路由转发给页面内的 Chromium PDF 查看器，不落盘、不快缓存；其他出版商的付费或登录 PDF 不做代理。
 - 渲染前会在浏览器端用白名单清洗 HTML（移除脚本、样式与表单），只保留正文、图表、公式和链接。
 - 引用格式由程序生成，投稿前请按目标期刊要求核对。
 
@@ -133,10 +152,10 @@ cordis.patch.yml      插件清单
 
 ## 路线图
 
-- **v0.3 全文阅读（当前）**：arXiv HTML 章节、图表、公式、参考文献与按章节翻译。
-- **v0.4 深读与批注**：段落级高亮/批注、PMC JATS 适配、阅读进度与章节笔记。
-- **v0.5 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
-- **v0.6 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
+- **v0.4 首页与指标（当前）**：关注期刊首页、OpenAlex 引用指标、本地 IF 导入、arXiv PDF 内置预览。
+- **v0.5 深读与批注**：段落级高亮/批注、PMC JATS 适配、阅读进度与章节笔记。
+- **v0.6 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
+- **v0.7 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
 - **v1.0 全学科**：可导入的期刊目录、更多数据源、npm 发布与完整文档。
 
 欢迎在 Issues 里补充你所在领域的期刊清单和使用场景。

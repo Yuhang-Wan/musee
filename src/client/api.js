@@ -63,6 +63,14 @@ export const api = {
   translateTitles: (titles, lang) => request('/translate-titles', { method: 'POST', body: { titles, lang } }),
   translateSection: (heading, text, lang) => request('/translate-section', { method: 'POST', body: { heading, text, lang } }),
   fulltext: (arxivId) => request(`/fulltext?arxivId=${encodeURIComponent(arxivId)}`),
+  preferences: () => request('/preferences'),
+  follow: (journalId, follow) =>
+    request('/preferences', { method: 'POST', body: { action: follow ? 'follow' : 'unfollow', journalId } }),
+  home: () => request('/home'),
+  pdfUrl: async (arxivId) => {
+    const token = await ensureToken();
+    return `/musee/api/pdf?arxivId=${encodeURIComponent(arxivId)}&token=${encodeURIComponent(token)}`;
+  },
   save: (paper) => request('/library', { method: 'POST', body: { action: 'save', paper } }),
   update: (id, patch) => request('/library', { method: 'POST', body: { action: 'update', id, patch } }),
   remove: (id) => request('/library', { method: 'POST', body: { action: 'remove', id } }),

@@ -147,3 +147,20 @@ export function IconSettings({ size = 16 }) {
     h('circle', { cx: 9, cy: 17, r: 2.2 }),
   );
 }
+
+export function IconStar({ size = 14, filled = false }) {
+  return h(
+    'svg',
+    {
+      width: size,
+      height: size,
+      viewBox: '0 0 24 24',
+      fill: filled ? 'currentColor' : 'none',
+      stroke: 'currentColor',
+      strokeWidth: 1.6,
+      strokeLinejoin: 'round',
+      'aria-hidden': 'true',
+    },
+    h('path', { d: 'm12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z' }),
+  );
+}

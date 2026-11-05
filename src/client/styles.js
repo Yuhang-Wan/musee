@@ -363,6 +363,22 @@ export const CSS = `
 
 .musee-venue-head { display: flex; gap: 22px; align-items: flex-start; margin-top: 14px; }
 .musee-venue-head h1 { margin: 0 0 4px; font-size: 27px; line-height: 1.3; letter-spacing: -0.012em; }
+.musee-venue-title-row { display: flex; align-items: flex-start; gap: 10px; }
+.musee-venue-title-row h1 { margin: 0 0 4px; }
+.musee-follow-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; flex: 0 0 auto;
+  border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px;
+  background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer;
+}
+.musee-follow-btn:hover { color: var(--dsw-alias-brand-primary); border-color: var(--dsw-alias-brand-primary); }
+.musee-follow-btn.active {
+  color: var(--dsw-alias-brand-primary);
+  border-color: color-mix(in srgb, var(--dsw-alias-brand-primary) 50%, transparent);
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 10%, transparent);
+}
+.musee-journal-title-row { display: flex; align-items: flex-start; gap: 8px; }
+.musee-journal-title-row .musee-journal-name { flex: 1; }
 .musee-venue-local { color: var(--dsw-alias-label-secondary); font-size: 14px; margin-bottom: 8px; }
 .musee-venue-about { margin: 0; max-width: 660px; color: var(--dsw-alias-label-secondary); font-size: 13.5px; line-height: 1.7; }
 .musee-venue-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; color: var(--dsw-alias-label-secondary); font-size: 12px; }
@@ -449,6 +465,36 @@ export const CSS = `
   display: flex; align-items: center; justify-content: center; cursor: zoom-out;
 }
 .musee-lightbox img { max-width: 96vw; max-height: 92vh; object-fit: contain; border-radius: 6px; }
+
+.musee-home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; margin-top: 22px; }
+.musee-home-card {
+  border: 1px solid var(--dsw-alias-border-l1); border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-1); padding: 14px;
+  display: flex; flex-direction: column; min-width: 0;
+}
+.musee-home-head { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+.musee-home-info { flex: 1; min-width: 0; }
+.musee-home-name { font-weight: 650; line-height: 1.35; }
+.musee-home-local { font-size: 12px; color: var(--dsw-alias-label-secondary); margin-top: 2px; }
+.musee-home-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; font-size: 11px; color: var(--dsw-alias-label-secondary); }
+.musee-home-papers { margin-top: 12px; border-top: 1px solid var(--dsw-alias-border-l1); padding-top: 6px; display: flex; flex-direction: column; }
+.musee-home-paper {
+  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  border: 0; background: transparent; color: var(--dsw-alias-label-primary);
+  text-align: left; padding: 7px 4px; border-radius: 6px; cursor: pointer;
+}
+.musee-home-paper:hover { background: var(--dsw-alias-bg-layer-2); }
+.musee-home-paper-title {
+  flex: 1; font-size: 12.5px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.musee-home-paper-date { font-size: 11px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
+.musee-home-nopapers { color: var(--dsw-alias-label-secondary); font-size: 12px; padding: 10px 4px; }
+.musee-home-more { align-self: flex-start; margin-top: 8px; border: 0; background: transparent; color: var(--dsw-alias-brand-primary); font-size: 12px; padding: 4px; cursor: pointer; }
+.musee-home-empty { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+.musee-pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--dsw-alias-bg-base); }
+.musee-pdf-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--dsw-alias-bg-layer-1); }
 
 
 @media (max-width: 920px) {

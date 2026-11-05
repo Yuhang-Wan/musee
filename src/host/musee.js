@@ -58,10 +58,13 @@ function isSameOrigin(request, url) {
   return true;
 }
 
-function disciplinePayload() {
+function disciplinePayload(store) {
   return DISCIPLINES.map((discipline) => ({
     ...discipline,
-    journals: journalsFor(discipline.id),
+    journals: journalsFor(discipline.id).map((journal) => ({
+      ...journal,
+      userIf: store.impactFactor(journal.issn),
+    })),
   }));
 }
 
@@ -115,8 +118,9 @@ export function createMusee(ctx, config = {}) {
     if (pathname === '/bootstrap') {
       return json({
         version: VERSION,
-        disciplines: disciplinePayload(),
+        disciplines: disciplinePayload(store),
         conferences: CONFERENCES,
+        followedJournals: store.followedJournals(),
         llm: translator.available(),
         route: translator.route(),
         dataDir,
@@ -142,7 +146,14 @@ export function createMusee(ctx, config = {}) {
       const page = await cache.wrap(`journal:${journalId}:${limit}:${offset}:${year || 'all'}`, () =>
         worksBySourcePage(journal.openalex, { limit, offset, year, mailto }),
       );
-      return json({ journal, source, years, year, total: page.total, papers: page.papers });
+      return json({
+        journal: { ...journal, userIf: store.impactFactor(journal.issn) },
+        source,
+        years,
+        year,
+        total: page.total,
+        papers: page.papers,
+      });
     }
 
     if (pathname === '/conference') {
@@ -210,6 +221,61 @@ export function createMusee(ctx, config = {}) {
       return json(await translator.translateTitles(titles, lang));
     }
 
+    if (pathname === '/home') {
+      const journals = store
+        .followedJournals()
+        .slice(0, 8)
+        .map((id) => JOURNALS_BY_ID.get(id))
+        .filter(Boolean);
+      const feed = await Promise.all(
+        journals.map(async (journal) => {
+          const page = await cache.wrap(`home:${journal.id}`, () =>
+            worksBySourcePage(journal.openalex, { limit: 3, mailto }),
+          );
+          return {
+            journal: { ...journal, userIf: store.impactFactor(journal.issn) },
+            papers: page.papers.slice(0, 3),
+          };
+        }),
+      );
+      return json({ journals: feed });
+    }
+
+    if (pathname === '/preferences') {
+      if (request.method === 'GET') return json({ followedJournals: store.followedJournals() });
+      if (request.method === 'POST') {
+        const body = await request.json();
+        const journalId = String(body.journalId || '');
+        if (!JOURNALS_BY_ID.has(journalId)) return json({ error: '未知的期刊。' }, 404);
+        const followed =
+          body.action === 'unfollow' ? await store.unfollowJournal(journalId) : await store.followJournal(journalId);
+        return json({ followedJournals: followed });
+      }
+    }
+
+    if (pathname === '/pdf') {
+      const arxivId = (url.searchParams.get('arxivId') || '').trim().replace(/^arxiv:/i, '').replace(/v\d+$/, '');
+      if (!/^[A-Za-z0-9][A-Za-z0-9.\-/]{2,40}$/.test(arxivId) || arxivId.includes('..')) {
+        return json({ error: '无效的 arXiv 编号。' }, 400);
+      }
+      const safePath = arxivId.split('/').map((part) => encodeURIComponent(part)).join('/');
+      const upstream = await fetch(`https://arxiv.org/pdf/${safePath}`, {
+        headers: { 'user-agent': 'Musee/0.4 (DSH reading plugin)' },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!upstream.ok) return json({ error: `PDF 获取失败（HTTP ${upstream.status}）。` }, 502);
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      return new Response(buffer, {
+        headers: {
+          'content-type': 'application/pdf',
+          'content-disposition': `inline; filename="${arxivId.replace(/[^\w.-]/g, '_')}.pdf"`,
+          'content-length': String(buffer.length),
+          'cache-control': 'no-store',
+        },
+      });
+    }
+
     if (pathname === '/library') {
       if (request.method === 'GET') return json({ items: store.list() });
       if (request.method === 'POST') {
@@ -262,7 +328,9 @@ export function createMusee(ctx, config = {}) {
       return json({ token, version: VERSION });
     }
 
-    const supplied = request.headers.get('x-musee-token') || '';
+    const supplied =
+      request.headers.get('x-musee-token') ||
+      (url.pathname === '/musee/api/pdf' ? url.searchParams.get('token') || '' : '');
     if (supplied !== token) {
       return json({ error: '未授权的请求：请刷新页面后再试。' }, 401);
     }

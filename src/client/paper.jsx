@@ -41,7 +41,7 @@ export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenu
   );
 }
 
-export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation, onRead }) {
+export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation, onRead, onPdf }) {
   const [mode, setMode] = useState('both');
   const [note, setNote] = useState('');
   const [tags, setTags] = useState('');
@@ -159,6 +159,7 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
         translating ? t('paper.translating') : t('paper.translate'),
       ),
       paper.arxivId ? h(Button, { variant: 'primary', onClick: () => onRead(paper) }, h(IconBook), t('paper.fulltext')) : null,
+      paper.arxivId ? h(Button, { onClick: () => onPdf(paper) }, t('paper.pdf')) : null,
       h(Button, { onClick: () => onCite([item || paper]) }, h(IconQuote), t('paper.cite')),
       paper.url
         ? h('a', { className: 'musee-btn', href: paper.url, target: '_blank', rel: 'noreferrer' }, h(IconExternal), t('paper.open'))

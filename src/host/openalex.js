@@ -146,6 +146,11 @@ export async function fetchSource(sourceId, { mailto = '' } = {}) {
     issn: data.issn_l || '',
     firstYear: data.first_publication_year || null,
     lastYear: data.last_publication_year || null,
+    metrics: {
+      twoYearMeanCitedness: data.summary_stats?.['2yr_mean_citedness'] || 0,
+      hIndex: data.summary_stats?.h_index || 0,
+      i10Index: data.summary_stats?.i10_index || 0,
+    },
   };
 }
 

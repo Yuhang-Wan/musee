@@ -70,6 +70,13 @@ window.__ModuleLoader__.load({
         translateTitles: (titles, lang) => request("/translate-titles", { method: "POST", body: { titles, lang } }),
         translateSection: (heading, text2, lang) => request("/translate-section", { method: "POST", body: { heading, text: text2, lang } }),
         fulltext: (arxivId) => request(`/fulltext?arxivId=${encodeURIComponent(arxivId)}`),
+        preferences: () => request("/preferences"),
+        follow: (journalId, follow) => request("/preferences", { method: "POST", body: { action: follow ? "follow" : "unfollow", journalId } }),
+        home: () => request("/home"),
+        pdfUrl: async (arxivId) => {
+          const token = await ensureToken();
+          return `/musee/api/pdf?arxivId=${encodeURIComponent(arxivId)}&token=${encodeURIComponent(token)}`;
+        },
         save: (paper) => request("/library", { method: "POST", body: { action: "save", paper } }),
         update: (id, patch) => request("/library", { method: "POST", body: { action: "update", id, patch } }),
         remove: (id) => request("/library", { method: "POST", body: { action: "remove", id } }),
@@ -465,6 +472,22 @@ window.__ModuleLoader__.load({
 
     .musee-venue-head { display: flex; gap: 22px; align-items: flex-start; margin-top: 14px; }
     .musee-venue-head h1 { margin: 0 0 4px; font-size: 27px; line-height: 1.3; letter-spacing: -0.012em; }
+    .musee-venue-title-row { display: flex; align-items: flex-start; gap: 10px; }
+    .musee-venue-title-row h1 { margin: 0 0 4px; }
+    .musee-follow-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; flex: 0 0 auto;
+      border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px;
+      background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer;
+    }
+    .musee-follow-btn:hover { color: var(--dsw-alias-brand-primary); border-color: var(--dsw-alias-brand-primary); }
+    .musee-follow-btn.active {
+      color: var(--dsw-alias-brand-primary);
+      border-color: color-mix(in srgb, var(--dsw-alias-brand-primary) 50%, transparent);
+      background: color-mix(in srgb, var(--dsw-alias-brand-primary) 10%, transparent);
+    }
+    .musee-journal-title-row { display: flex; align-items: flex-start; gap: 8px; }
+    .musee-journal-title-row .musee-journal-name { flex: 1; }
     .musee-venue-local { color: var(--dsw-alias-label-secondary); font-size: 14px; margin-bottom: 8px; }
     .musee-venue-about { margin: 0; max-width: 660px; color: var(--dsw-alias-label-secondary); font-size: 13.5px; line-height: 1.7; }
     .musee-venue-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; color: var(--dsw-alias-label-secondary); font-size: 12px; }
@@ -551,6 +574,36 @@ window.__ModuleLoader__.load({
       display: flex; align-items: center; justify-content: center; cursor: zoom-out;
     }
     .musee-lightbox img { max-width: 96vw; max-height: 92vh; object-fit: contain; border-radius: 6px; }
+
+    .musee-home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; margin-top: 22px; }
+    .musee-home-card {
+      border: 1px solid var(--dsw-alias-border-l1); border-radius: 12px;
+      background: var(--dsw-alias-bg-layer-1); padding: 14px;
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .musee-home-head { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+    .musee-home-info { flex: 1; min-width: 0; }
+    .musee-home-name { font-weight: 650; line-height: 1.35; }
+    .musee-home-local { font-size: 12px; color: var(--dsw-alias-label-secondary); margin-top: 2px; }
+    .musee-home-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; font-size: 11px; color: var(--dsw-alias-label-secondary); }
+    .musee-home-papers { margin-top: 12px; border-top: 1px solid var(--dsw-alias-border-l1); padding-top: 6px; display: flex; flex-direction: column; }
+    .musee-home-paper {
+      display: flex; align-items: baseline; gap: 10px; width: 100%;
+      border: 0; background: transparent; color: var(--dsw-alias-label-primary);
+      text-align: left; padding: 7px 4px; border-radius: 6px; cursor: pointer;
+    }
+    .musee-home-paper:hover { background: var(--dsw-alias-bg-layer-2); }
+    .musee-home-paper-title {
+      flex: 1; font-size: 12.5px; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .musee-home-paper-date { font-size: 11px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
+    .musee-home-nopapers { color: var(--dsw-alias-label-secondary); font-size: 12px; padding: 10px 4px; }
+    .musee-home-more { align-self: flex-start; margin-top: 8px; border: 0; background: transparent; color: var(--dsw-alias-brand-primary); font-size: 12px; padding: 4px; cursor: pointer; }
+    .musee-home-empty { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+    .musee-pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--dsw-alias-bg-base); }
+    .musee-pdf-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--dsw-alias-bg-layer-1); }
 
 
     @media (max-width: 920px) {
@@ -703,6 +756,22 @@ window.__ModuleLoader__.load({
           h("circle", { cx: 9, cy: 17, r: 2.2 })
         );
       }
+      function IconStar({ size = 14, filled = false }) {
+        return h(
+          "svg",
+          {
+            width: size,
+            height: size,
+            viewBox: "0 0 24 24",
+            fill: filled ? "currentColor" : "none",
+            stroke: "currentColor",
+            strokeWidth: 1.6,
+            strokeLinejoin: "round",
+            "aria-hidden": "true"
+          },
+          h("path", { d: "m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" })
+        );
+      }
 
       // src/client/paper.jsx
       function tr(t, key, params) {
@@ -741,7 +810,7 @@ window.__ModuleLoader__.load({
           })
         );
       }
-      function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation, onRead }) {
+      function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation, onRead, onPdf }) {
         const [mode, setMode] = useState("both");
         const [note, setNote] = useState("");
         const [tags, setTags] = useState("");
@@ -843,6 +912,7 @@ window.__ModuleLoader__.load({
               translating ? t("paper.translating") : t("paper.translate")
             ),
             paper.arxivId ? h(Button, { variant: "primary", onClick: () => onRead(paper) }, h(IconBook), t("paper.fulltext")) : null,
+            paper.arxivId ? h(Button, { onClick: () => onPdf(paper) }, t("paper.pdf")) : null,
             h(Button, { onClick: () => onCite([item || paper]) }, h(IconQuote), t("paper.cite")),
             paper.url ? h("a", { className: "musee-btn", href: paper.url, target: "_blank", rel: "noreferrer" }, h(IconExternal), t("paper.open")) : null
           ),
@@ -1210,6 +1280,18 @@ window.__ModuleLoader__.load({
         "nav.discover": "Discover",
         "nav.conferences": "Conferences",
         "nav.library": "Library",
+        "nav.home": "Home",
+        "home.title": "Home",
+        "home.subtitle": "Latest papers from the journals you follow.",
+        "home.empty": "You are not following any journal yet. Follow journals to see their newest papers here.",
+        "home.browse": "Browse journals",
+        "home.latest": "Latest",
+        "home.viewAll": "View all",
+        "home.loading": "Loading your followed journals…",
+        "home.error": "Failed to load your feed: {message}",
+        "home.follow": "Follow",
+        "home.following": "Following",
+        "home.noPapers": "No recent papers yet",
         "search.placeholder": "Search papers, authors, topics…",
         "search.title": "Search: {q}",
         "search.empty": "No matching papers. Try another keyword.",
@@ -1242,6 +1324,15 @@ window.__ModuleLoader__.load({
         "paper.cite": "Cite",
         "paper.open": "Open source",
         "paper.fulltext": "Read full text",
+        "paper.pdf": "Read PDF",
+        "metrics.if": "IF",
+        "metrics.ifHint": "Impact factor imported locally by the user",
+        "metrics.twoYear": "2yr citedness",
+        "metrics.twoYearHint": "OpenAlex two-year mean citedness, not the JCR Impact Factor",
+        "metrics.hIndex": "h-index",
+        "pdf.loading": "Loading PDF…",
+        "pdf.error": "Failed to load PDF: {message}",
+        "pdf.title": "PDF preview",
         "reader.loading": "Fetching the full text…",
         "reader.unavailable": "No HTML full text is available for this paper. Open the PDF instead.",
         "reader.openPdf": "Open PDF",
@@ -1305,6 +1396,8 @@ window.__ModuleLoader__.load({
         "toast.updated": "Saved",
         "toast.exported": "Exported",
         "toast.translateFailed": "Translation failed: {message}",
+        "toast.followed": "Journal followed",
+        "toast.unfollowed": "Journal unfollowed",
         "error.noToken": "Musee is not ready: refresh the page and try again.",
         "error.refresh": "Refresh page",
         "error.load": "Failed to load: {message}",
@@ -1341,6 +1434,18 @@ window.__ModuleLoader__.load({
         "nav.discover": "发现",
         "nav.conferences": "顶会",
         "nav.library": "我的库",
+        "nav.home": "首页",
+        "home.title": "首页",
+        "home.subtitle": "你关注的期刊，最新论文都汇总在这里。",
+        "home.empty": "还没有关注期刊。关注几本你常读的期刊，最新论文会出现在这里。",
+        "home.browse": "去发现期刊",
+        "home.latest": "最新",
+        "home.viewAll": "查看全部",
+        "home.loading": "正在获取关注期刊的最新论文…",
+        "home.error": "加载失败：{message}",
+        "home.follow": "关注",
+        "home.following": "已关注",
+        "home.noPapers": "暂时没有最新论文",
         "search.placeholder": "检索论文、作者或主题…",
         "search.title": "检索：{q}",
         "search.empty": "没有找到匹配的论文，换个关键词试试。",
@@ -1373,6 +1478,15 @@ window.__ModuleLoader__.load({
         "paper.cite": "引用",
         "paper.open": "打开原文",
         "paper.fulltext": "全文阅读",
+        "paper.pdf": "PDF 阅读",
+        "metrics.if": "IF",
+        "metrics.ifHint": "用户本地导入的影响因子",
+        "metrics.twoYear": "2yr 被引",
+        "metrics.twoYearHint": "OpenAlex 两年平均被引，不是 JCR 影响因子",
+        "metrics.hIndex": "h-index",
+        "pdf.loading": "正在加载 PDF…",
+        "pdf.error": "PDF 加载失败：{message}",
+        "pdf.title": "PDF 预览",
         "reader.loading": "正在获取全文…",
         "reader.unavailable": "这篇论文没有 HTML 全文，请打开 PDF。",
         "reader.openPdf": "打开 PDF",
@@ -1436,6 +1550,8 @@ window.__ModuleLoader__.load({
         "toast.updated": "已保存",
         "toast.exported": "已导出",
         "toast.translateFailed": "翻译失败：{message}",
+        "toast.followed": "已关注该期刊",
+        "toast.unfollowed": "已取消关注",
         "error.noToken": "Musee 还没有就绪：请刷新页面后再试。",
         "error.refresh": "刷新页面",
         "error.load": "加载失败：{message}",
@@ -1472,6 +1588,18 @@ window.__ModuleLoader__.load({
         "nav.discover": "Découvrir",
         "nav.conferences": "Conférences",
         "nav.library": "Bibliothèque",
+        "nav.home": "Accueil",
+        "home.title": "Accueil",
+        "home.subtitle": "Les derniers articles des revues que vous suivez.",
+        "home.empty": "Vous ne suivez encore aucune revue. Suivez des revues pour voir leurs nouveautés ici.",
+        "home.browse": "Parcourir les revues",
+        "home.latest": "Derniers",
+        "home.viewAll": "Tout voir",
+        "home.loading": "Chargement de vos revues…",
+        "home.error": "Échec du chargement : {message}",
+        "home.follow": "Suivre",
+        "home.following": "Suivi",
+        "home.noPapers": "Aucun article récent",
         "search.placeholder": "Rechercher un article, un auteur, un thème…",
         "search.title": "Recherche : {q}",
         "search.empty": "Aucun article trouvé. Essayez un autre mot-clé.",
@@ -1504,6 +1632,15 @@ window.__ModuleLoader__.load({
         "paper.cite": "Citer",
         "paper.open": "Ouvrir la source",
         "paper.fulltext": "Lire le texte intégral",
+        "paper.pdf": "Lire le PDF",
+        "metrics.if": "IF",
+        "metrics.ifHint": "Facteur d’impact importé localement",
+        "metrics.twoYear": "citations 2 ans",
+        "metrics.twoYearHint": "Moyenne de citations sur deux ans OpenAlex, pas le facteur d’impact JCR",
+        "metrics.hIndex": "h-index",
+        "pdf.loading": "Chargement du PDF…",
+        "pdf.error": "Échec du chargement du PDF : {message}",
+        "pdf.title": "Aperçu PDF",
         "reader.loading": "Récupération du texte intégral…",
         "reader.unavailable": "Aucun texte intégral HTML n’est disponible. Ouvrez le PDF.",
         "reader.openPdf": "Ouvrir le PDF",
@@ -1567,6 +1704,8 @@ window.__ModuleLoader__.load({
         "toast.updated": "Enregistré",
         "toast.exported": "Exporté",
         "toast.translateFailed": "Échec de la traduction : {message}",
+        "toast.followed": "Revue suivie",
+        "toast.unfollowed": "Revue retirée",
         "error.noToken": "Musee n’est pas prêt : rechargez la page.",
         "error.refresh": "Recharger la page",
         "error.load": "Échec du chargement : {message}",
@@ -3799,7 +3938,7 @@ window.__ModuleLoader__.load({
       function tr2(t, key, params) {
         return tFormat(t(key), params);
       }
-      function Reader({ paper, t, targetLang, onBack }) {
+      function Reader({ paper, t, targetLang, onBack, onPdf }) {
         const [data, setData] = useState(null);
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState("");
@@ -3889,7 +4028,7 @@ window.__ModuleLoader__.load({
             translating ? t("reader.translating") : t("reader.translate")
           ) : null,
           data?.absUrl ? h("a", { className: "musee-btn sm", href: data.absUrl, target: "_blank", rel: "noreferrer" }, "arXiv") : null,
-          data?.pdfUrl ? h("a", { className: "musee-btn sm", href: data.pdfUrl, target: "_blank", rel: "noreferrer" }, h(IconExternal), "PDF") : null
+          data?.pdfUrl ? onPdf ? h(Button, { size: "sm", onClick: onPdf }, "PDF") : h("a", { className: "musee-btn sm", href: data.pdfUrl, target: "_blank", rel: "noreferrer" }, h(IconExternal), "PDF") : null
         );
         if (loading) {
           return h(
@@ -3981,6 +4120,143 @@ window.__ModuleLoader__.load({
         );
       }
 
+      // src/client/home.jsx
+      function localizedName(venue, lang) {
+        if (!venue || lang === "en") return "";
+        return (lang === "zh" ? venue.nameZh : venue.nameFr) || "";
+      }
+      function Home({ t, lang, feed, loading, error, followed, onOpenJournal, onOpenPaper, onDiscover, onToggleFollow, titleTranslations }) {
+        const header = h(
+          "div",
+          { className: "musee-hero" },
+          h("h1", null, t("home.title")),
+          h("p", null, t("home.subtitle"))
+        );
+        if (loading && !feed.length) {
+          return h("div", { className: "musee-page" }, header, h(Loading, { label: t("home.loading") }));
+        }
+        if (error) {
+          return h("div", { className: "musee-page" }, header, h(ErrorBanner, { message: error }));
+        }
+        if (!feed.length) {
+          return h(
+            "div",
+            { className: "musee-page" },
+            header,
+            h(
+              "div",
+              { className: "musee-home-empty" },
+              h(Empty, { title: t("home.empty") }),
+              h(Button, { variant: "primary", onClick: onDiscover }, t("home.browse"))
+            )
+          );
+        }
+        return h(
+          "div",
+          { className: "musee-page" },
+          header,
+          h(
+            "div",
+            { className: "musee-home-grid" },
+            feed.map(
+              ({ journal, papers }) => h(
+                "div",
+                { className: "musee-home-card", key: journal.id },
+                h(
+                  "div",
+                  {
+                    className: "musee-home-head",
+                    role: "button",
+                    tabIndex: 0,
+                    onClick: () => onOpenJournal(journal),
+                    onKeyDown: (event) => {
+                      if (event.key === "Enter") onOpenJournal(journal);
+                    }
+                  },
+                  h(JournalCover, { venue: journal, kind: journal.discipline, size: "sm", issue: papers[0]?.year ? String(papers[0].year) : "" }),
+                  h(
+                    "div",
+                    { className: "musee-home-info" },
+                    h("div", { className: "musee-home-name" }, journal.name),
+                    localizedName(journal, lang) ? h("div", { className: "musee-home-local" }, localizedName(journal, lang)) : null,
+                    h(
+                      "div",
+                      { className: "musee-home-meta" },
+                      h("span", null, journal.issn),
+                      journal.userIf ? h("span", null, `${t("metrics.if")} ${journal.userIf}`) : null
+                    )
+                  ),
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      className: `musee-follow-btn ${followed.has(journal.id) ? "active" : ""}`,
+                      title: followed.has(journal.id) ? t("home.following") : t("home.follow"),
+                      "aria-label": followed.has(journal.id) ? t("home.following") : t("home.follow"),
+                      onClick: (event) => {
+                        event.stopPropagation();
+                        onToggleFollow(journal);
+                      }
+                    },
+                    h(IconStar, { filled: followed.has(journal.id) })
+                  )
+                ),
+                h(
+                  "div",
+                  { className: "musee-home-papers" },
+                  papers.length ? papers.map(
+                    (paper) => h(
+                      "button",
+                      { key: paper.id, type: "button", className: "musee-home-paper", onClick: () => onOpenPaper(paper) },
+                      h("span", { className: "musee-home-paper-title" }, titleTranslations[paper.id] || paper.title),
+                      h("span", { className: "musee-home-paper-date" }, paper.date || "")
+                    )
+                  ) : h("div", { className: "musee-home-nopapers" }, t("home.noPapers"))
+                ),
+                h("button", { type: "button", className: "musee-home-more", onClick: () => onOpenJournal(journal) }, `${t("home.viewAll")} →`)
+              )
+            )
+          )
+        );
+      }
+
+      // src/client/pdf.jsx
+      function PdfViewer({ paper, t, onBack }) {
+        const [url, setUrl] = useState("");
+        const [error, setError] = useState("");
+        useEffect(() => {
+          let alive = true;
+          setUrl("");
+          setError("");
+          api.pdfUrl(paper.arxivId).then((value) => {
+            if (alive) setUrl(value);
+          }).catch((reason) => {
+            if (alive) setError(reason.message || String(reason));
+          });
+          return () => {
+            alive = false;
+          };
+        }, [paper.arxivId]);
+        return h(
+          "div",
+          { className: "musee-pdf-view" },
+          h(
+            "div",
+            { className: "musee-reader-head" },
+            h("button", { type: "button", className: "musee-back", onClick: onBack }, h(IconBack), t("paper.back")),
+            h("div", { className: "musee-reader-title" }, paper.title),
+            h("div", { style: { flex: 1 } }),
+            h(
+              "a",
+              { className: "musee-btn sm", href: `https://arxiv.org/pdf/${paper.arxivId}`, target: "_blank", rel: "noreferrer" },
+              h(IconExternal),
+              "PDF"
+            )
+          ),
+          error ? h("div", { className: "musee-page" }, h(ErrorBanner, { message: `${t("pdf.error")} ${error}`.trim() })) : url ? h("iframe", { className: "musee-pdf-frame", src: url, title: t("pdf.title") }) : h("div", { className: "musee-page" }, h(Loading, { label: t("pdf.loading") }))
+        );
+      }
+
       // src/client/app.jsx
       function tr3(t, key, params) {
         return tFormat(t(key), params);
@@ -3988,7 +4264,7 @@ window.__ModuleLoader__.load({
       function disciplineName(discipline, lang) {
         return discipline.name?.[lang] || discipline.name?.en || discipline.id;
       }
-      function localizedName(venue, lang) {
+      function localizedName2(venue, lang) {
         if (!venue || lang === "en") return "";
         return (lang === "zh" ? venue.nameZh : venue.nameFr) || "";
       }
@@ -4008,7 +4284,11 @@ window.__ModuleLoader__.load({
         const [boot, setBoot] = useState(null);
         const [bootError, setBootError] = useState("");
         const [discipline, setDiscipline] = useState("urban");
-        const [view, setView] = useState({ kind: "discover" });
+        const [view, setView] = useState({ kind: "home" });
+        const [followed, setFollowed] = useState(() => /* @__PURE__ */ new Set());
+        const [homeFeed, setHomeFeed] = useState([]);
+        const [homeState, setHomeState] = useState("idle");
+        const [homeError, setHomeError] = useState("");
         const [papers, setPapers] = useState([]);
         const [sourceInfo, setSourceInfo] = useState(null);
         const [listState, setListState] = useState("idle");
@@ -4043,7 +4323,10 @@ window.__ModuleLoader__.load({
         useEffect(() => {
           let alive = true;
           api.bootstrap().then((data) => {
-            if (alive) setBoot(data);
+            if (alive) {
+              setBoot(data);
+              setFollowed(new Set(data.followedJournals || []));
+            }
           }).catch((error) => {
             if (alive) setBootError(errorText(error));
           });
@@ -4092,6 +4375,24 @@ window.__ModuleLoader__.load({
             for (const entry of pending) titlePendingRef.current.delete(entry.key);
           });
         };
+        const loadHome = async () => {
+          if (!boot) return;
+          setHomeState("loading");
+          setHomeError("");
+          try {
+            const data = await api.home();
+            const feed = data.journals || [];
+            setHomeFeed(feed);
+            setHomeState("ready");
+            autoTranslateTitles(feed.flatMap((entry) => entry.papers || []));
+          } catch (error) {
+            setHomeError(errorText(error));
+            setHomeState("error");
+          }
+        };
+        useEffect(() => {
+          if (boot) loadHome();
+        }, [boot]);
         useEffect(() => {
           setTitleTranslations({});
         }, [lang, targetLang, translateTitles]);
@@ -4175,6 +4476,11 @@ window.__ModuleLoader__.load({
           setView({ kind: "reader", paper });
           scrollTop();
         };
+        const goHome = () => {
+          setView({ kind: "home" });
+          scrollTop();
+          loadHome();
+        };
         const goDiscover = () => {
           setView({ kind: "discover" });
           scrollTop();
@@ -4182,6 +4488,21 @@ window.__ModuleLoader__.load({
         const goLibrary = () => {
           setView({ kind: "library" });
           scrollTop();
+        };
+        const openPdf = (paper) => {
+          setView({ kind: "pdf", paper });
+          scrollTop();
+        };
+        const toggleFollow = async (journal) => {
+          const next = !followed.has(journal.id);
+          try {
+            const data = await api.follow(journal.id, next);
+            setFollowed(new Set(data.followedJournals || []));
+            showToast(next ? t("toast.followed") : t("toast.unfollowed"));
+            loadHome();
+          } catch (error) {
+            showToast(errorText(error));
+          }
         };
         const backToList = () => {
           setView(paperFrom || { kind: "discover" });
@@ -4244,7 +4565,7 @@ window.__ModuleLoader__.load({
           });
         };
         const renderVenueHead = (venue, kind, options = {}) => {
-          const local = localizedName(venue, lang);
+          const local = localizedName2(venue, lang);
           return h(
             "div",
             { className: "musee-venue-head" },
@@ -4252,13 +4573,35 @@ window.__ModuleLoader__.load({
             h(
               "div",
               { style: { minWidth: 0 } },
-              h("h1", null, venue.name),
+              h(
+                "div",
+                { className: "musee-venue-title-row" },
+                h("h1", null, venue.name),
+                kind === "journal" && options.onToggleFollow ? h(
+                  "button",
+                  {
+                    type: "button",
+                    className: `musee-follow-btn ${options.followed ? "active" : ""}`,
+                    title: options.followed ? t("home.following") : t("home.follow"),
+                    "aria-label": options.followed ? t("home.following") : t("home.follow"),
+                    onClick: options.onToggleFollow
+                  },
+                  h(IconStar, { filled: Boolean(options.followed) })
+                ) : null
+              ),
               local ? h("div", { className: "musee-venue-local" }, local) : null,
               h("p", { className: "musee-venue-about" }, localizedAbout(venue, lang)),
               h(
                 "div",
                 { className: "musee-venue-meta" },
                 options.issn ? h("span", null, options.issn) : null,
+                options.userIf ? h("span", { title: t("metrics.ifHint") }, `${t("metrics.if")} ${options.userIf}`) : null,
+                options.metrics?.twoYearMeanCitedness ? h(
+                  "span",
+                  { title: t("metrics.twoYearHint") },
+                  `${t("metrics.twoYear")} ${Number(options.metrics.twoYearMeanCitedness).toFixed(1)}`
+                ) : null,
+                options.metrics?.hIndex ? h("span", null, `${t("metrics.hIndex")} ${options.metrics.hIndex}`) : null,
                 options.worksCount ? h("span", null, tr3(t, "journal.works", { n: options.worksCount.toLocaleString() })) : null,
                 options.isOa ? h(Pill, { tone: "success" }, t("journal.oa")) : null,
                 kind === "conference" ? h(Pill, { tone: "brand" }, t(venue.group === "robotics" ? "conference.group.robotics" : "conference.group.ai")) : null,
@@ -4308,20 +4651,48 @@ window.__ModuleLoader__.load({
                 { className: "musee-grid" },
                 journals.map(
                   (journal) => h(
-                    "button",
-                    { key: journal.id, type: "button", className: "musee-journal-card", onClick: () => openJournal(journal) },
+                    "div",
+                    {
+                      key: journal.id,
+                      className: "musee-journal-card",
+                      role: "button",
+                      tabIndex: 0,
+                      onClick: () => openJournal(journal),
+                      onKeyDown: (event) => {
+                        if (event.key === "Enter") openJournal(journal);
+                      }
+                    },
                     h(JournalCover, { venue: journal, kind: journal.discipline, size: "sm" }),
                     h(
                       "div",
                       { className: "musee-journal-body" },
-                      h("div", { className: "musee-journal-name" }, journal.name),
-                      localizedName(journal, lang) ? h("div", { className: "musee-journal-local" }, localizedName(journal, lang)) : null,
+                      h(
+                        "div",
+                        { className: "musee-journal-title-row" },
+                        h("div", { className: "musee-journal-name" }, journal.name),
+                        h(
+                          "button",
+                          {
+                            type: "button",
+                            className: `musee-follow-btn ${followed.has(journal.id) ? "active" : ""}`,
+                            title: followed.has(journal.id) ? t("home.following") : t("home.follow"),
+                            "aria-label": followed.has(journal.id) ? t("home.following") : t("home.follow"),
+                            onClick: (event) => {
+                              event.stopPropagation();
+                              toggleFollow(journal);
+                            }
+                          },
+                          h(IconStar, { filled: followed.has(journal.id) })
+                        )
+                      ),
+                      localizedName2(journal, lang) ? h("div", { className: "musee-journal-local" }, localizedName2(journal, lang)) : null,
                       h("div", { className: "musee-journal-about" }, localizedAbout(journal, lang)),
                       h(
                         "div",
                         { className: "musee-journal-meta" },
                         h("span", null, journal.issn),
-                        h("span", null, journal.short)
+                        h("span", null, journal.short),
+                        journal.userIf ? h("span", null, `${t("metrics.if")} ${journal.userIf}`) : null
                       )
                     )
                   )
@@ -4349,7 +4720,7 @@ window.__ModuleLoader__.load({
                       "div",
                       { className: "musee-journal-body" },
                       h("div", { className: "musee-journal-name" }, conference.name),
-                      localizedName(conference, lang) ? h("div", { className: "musee-journal-local" }, localizedName(conference, lang)) : null,
+                      localizedName2(conference, lang) ? h("div", { className: "musee-journal-local" }, localizedName2(conference, lang)) : null,
                       h("div", { className: "musee-journal-about" }, localizedAbout(conference, lang)),
                       h(
                         "div",
@@ -4376,11 +4747,34 @@ window.__ModuleLoader__.load({
           );
         };
         const renderMain = () => {
+          if (view.kind === "home") {
+            return h(Home, {
+              t,
+              lang,
+              feed: homeFeed,
+              loading: homeState === "loading" || homeState === "idle",
+              error: homeState === "error" ? homeError : "",
+              followed,
+              onOpenJournal: openJournal,
+              onOpenPaper: openPaper,
+              onDiscover: goDiscover,
+              onToggleFollow: toggleFollow,
+              titleTranslations
+            });
+          }
+          if (view.kind === "pdf") {
+            return h(PdfViewer, {
+              paper: view.paper,
+              t,
+              onBack: () => setView({ kind: "paper", paper: view.paper })
+            });
+          }
           if (view.kind === "reader") {
             return h(Reader, {
               paper: view.paper,
               t,
               targetLang,
+              onPdf: () => openPdf(view.paper),
               onBack: () => setView({ kind: "paper", paper: view.paper })
             });
           }
@@ -4398,6 +4792,7 @@ window.__ModuleLoader__.load({
               translating,
               titleTranslation: titleTranslations[view.paper.id],
               onRead: openReader,
+              onPdf: openPdf,
               onCite: (items) => setCitation({ papers: items })
             });
           }
@@ -4434,7 +4829,11 @@ window.__ModuleLoader__.load({
                 issn: view.journal.issn,
                 worksCount: sourceInfo?.worksCount,
                 isOa: sourceInfo?.isOa,
-                homepage: sourceInfo?.homepage
+                homepage: sourceInfo?.homepage,
+                metrics: sourceInfo?.metrics,
+                userIf: view.journal.userIf,
+                followed: followed.has(view.journal.id),
+                onToggleFollow: () => toggleFollow(view.journal)
               }),
               h(
                 "div",
@@ -4519,7 +4918,8 @@ window.__ModuleLoader__.load({
             h(
               "nav",
               { className: "musee-nav" },
-              h("button", { type: "button", className: `musee-nav-btn ${view.kind !== "library" ? "active" : ""}`, onClick: goDiscover }, t("nav.discover")),
+              h("button", { type: "button", className: `musee-nav-btn ${view.kind === "home" ? "active" : ""}`, onClick: goHome }, t("nav.home")),
+              h("button", { type: "button", className: `musee-nav-btn ${view.kind !== "home" && view.kind !== "library" ? "active" : ""}`, onClick: goDiscover }, t("nav.discover")),
               h(
                 "button",
                 { type: "button", className: `musee-nav-btn ${view.kind === "library" ? "active" : ""}`, onClick: goLibrary },

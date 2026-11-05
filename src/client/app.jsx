@@ -1,13 +1,15 @@
 import { h, useEffect, useMemo, useRef, useState } from './react.js';
 import { api, downloadExport, tFormat } from './api.js';
 import { CSS } from './styles.js';
-import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, IconSettings, Loading, Pill, Spinner } from './ui.jsx';
+import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, IconSettings, IconStar, Loading, Pill, Spinner } from './ui.jsx';
 import { PaperDetail, PaperList } from './paper.jsx';
 import { LibraryView } from './library.jsx';
 import { CitationDialog } from './citation.jsx';
 import { JournalCover } from './cover.jsx';
 import { SettingsDialog } from './settings.jsx';
 import { Reader } from './reader.jsx';
+import { Home } from './home.jsx';
+import { PdfViewer } from './pdf.jsx';
 
 function tr(t, key, params) {
   return tFormat(t(key), params);
@@ -40,7 +42,11 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
   const [boot, setBoot] = useState(null);
   const [bootError, setBootError] = useState('');
   const [discipline, setDiscipline] = useState('urban');
-  const [view, setView] = useState({ kind: 'discover' });
+  const [view, setView] = useState({ kind: 'home' });
+  const [followed, setFollowed] = useState(() => new Set());
+  const [homeFeed, setHomeFeed] = useState([]);
+  const [homeState, setHomeState] = useState('idle');
+  const [homeError, setHomeError] = useState('');
   const [papers, setPapers] = useState([]);
   const [sourceInfo, setSourceInfo] = useState(null);
   const [listState, setListState] = useState('idle');
@@ -80,7 +86,10 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
     api
       .bootstrap()
       .then((data) => {
-        if (alive) setBoot(data);
+        if (alive) {
+          setBoot(data);
+          setFollowed(new Set(data.followedJournals || []));
+        }
       })
       .catch((error) => {
         if (alive) setBootError(errorText(error));
@@ -137,6 +146,26 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
         for (const entry of pending) titlePendingRef.current.delete(entry.key);
       });
   };
+
+  const loadHome = async () => {
+    if (!boot) return;
+    setHomeState('loading');
+    setHomeError('');
+    try {
+      const data = await api.home();
+      const feed = data.journals || [];
+      setHomeFeed(feed);
+      setHomeState('ready');
+      autoTranslateTitles(feed.flatMap((entry) => entry.papers || []));
+    } catch (error) {
+      setHomeError(errorText(error));
+      setHomeState('error');
+    }
+  };
+
+  useEffect(() => {
+    if (boot) loadHome();
+  }, [boot]);
 
   useEffect(() => {
     setTitleTranslations({});
@@ -238,6 +267,12 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
     scrollTop();
   };
 
+  const goHome = () => {
+    setView({ kind: 'home' });
+    scrollTop();
+    loadHome();
+  };
+
   const goDiscover = () => {
     setView({ kind: 'discover' });
     scrollTop();
@@ -246,6 +281,23 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
   const goLibrary = () => {
     setView({ kind: 'library' });
     scrollTop();
+  };
+
+  const openPdf = (paper) => {
+    setView({ kind: 'pdf', paper });
+    scrollTop();
+  };
+
+  const toggleFollow = async (journal) => {
+    const next = !followed.has(journal.id);
+    try {
+      const data = await api.follow(journal.id, next);
+      setFollowed(new Set(data.followedJournals || []));
+      showToast(next ? t('toast.followed') : t('toast.unfollowed'));
+      loadHome();
+    } catch (error) {
+      showToast(errorText(error));
+    }
   };
 
   const backToList = () => {
@@ -324,13 +376,39 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
       h(
         'div',
         { style: { minWidth: 0 } },
-        h('h1', null, venue.name),
+        h(
+          'div',
+          { className: 'musee-venue-title-row' },
+          h('h1', null, venue.name),
+          kind === 'journal' && options.onToggleFollow
+            ? h(
+                'button',
+                {
+                  type: 'button',
+                  className: `musee-follow-btn ${options.followed ? 'active' : ''}`,
+                  title: options.followed ? t('home.following') : t('home.follow'),
+                  'aria-label': options.followed ? t('home.following') : t('home.follow'),
+                  onClick: options.onToggleFollow,
+                },
+                h(IconStar, { filled: Boolean(options.followed) }),
+              )
+            : null,
+        ),
         local ? h('div', { className: 'musee-venue-local' }, local) : null,
         h('p', { className: 'musee-venue-about' }, localizedAbout(venue, lang)),
         h(
           'div',
           { className: 'musee-venue-meta' },
           options.issn ? h('span', null, options.issn) : null,
+          options.userIf ? h('span', { title: t('metrics.ifHint') }, `${t('metrics.if')} ${options.userIf}`) : null,
+          options.metrics?.twoYearMeanCitedness
+            ? h(
+                'span',
+                { title: t('metrics.twoYearHint') },
+                `${t('metrics.twoYear')} ${Number(options.metrics.twoYearMeanCitedness).toFixed(1)}`,
+              )
+            : null,
+          options.metrics?.hIndex ? h('span', null, `${t('metrics.hIndex')} ${options.metrics.hIndex}`) : null,
           options.worksCount ? h('span', null, tr(t, 'journal.works', { n: options.worksCount.toLocaleString() })) : null,
           options.isOa ? h(Pill, { tone: 'success' }, t('journal.oa')) : null,
           kind === 'conference'
@@ -385,13 +463,40 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
           { className: 'musee-grid' },
           journals.map((journal) =>
             h(
-              'button',
-              { key: journal.id, type: 'button', className: 'musee-journal-card', onClick: () => openJournal(journal) },
+              'div',
+              {
+                key: journal.id,
+                className: 'musee-journal-card',
+                role: 'button',
+                tabIndex: 0,
+                onClick: () => openJournal(journal),
+                onKeyDown: (event) => {
+                  if (event.key === 'Enter') openJournal(journal);
+                },
+              },
               h(JournalCover, { venue: journal, kind: journal.discipline, size: 'sm' }),
               h(
                 'div',
                 { className: 'musee-journal-body' },
-                h('div', { className: 'musee-journal-name' }, journal.name),
+                h(
+                  'div',
+                  { className: 'musee-journal-title-row' },
+                  h('div', { className: 'musee-journal-name' }, journal.name),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: `musee-follow-btn ${followed.has(journal.id) ? 'active' : ''}`,
+                      title: followed.has(journal.id) ? t('home.following') : t('home.follow'),
+                      'aria-label': followed.has(journal.id) ? t('home.following') : t('home.follow'),
+                      onClick: (event) => {
+                        event.stopPropagation();
+                        toggleFollow(journal);
+                      },
+                    },
+                    h(IconStar, { filled: followed.has(journal.id) }),
+                  ),
+                ),
                 localizedName(journal, lang) ? h('div', { className: 'musee-journal-local' }, localizedName(journal, lang)) : null,
                 h('div', { className: 'musee-journal-about' }, localizedAbout(journal, lang)),
                 h(
@@ -399,6 +504,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
                   { className: 'musee-journal-meta' },
                   h('span', null, journal.issn),
                   h('span', null, journal.short),
+                  journal.userIf ? h('span', null, `${t('metrics.if')} ${journal.userIf}`) : null,
                 ),
               ),
             ),
@@ -454,11 +560,36 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
   };
 
   const renderMain = () => {
+    if (view.kind === 'home') {
+      return h(Home, {
+        t,
+        lang,
+        feed: homeFeed,
+        loading: homeState === 'loading' || homeState === 'idle',
+        error: homeState === 'error' ? homeError : '',
+        followed,
+        onOpenJournal: openJournal,
+        onOpenPaper: openPaper,
+        onDiscover: goDiscover,
+        onToggleFollow: toggleFollow,
+        titleTranslations,
+      });
+    }
+
+    if (view.kind === 'pdf') {
+      return h(PdfViewer, {
+        paper: view.paper,
+        t,
+        onBack: () => setView({ kind: 'paper', paper: view.paper }),
+      });
+    }
+
     if (view.kind === 'reader') {
       return h(Reader, {
         paper: view.paper,
         t,
         targetLang,
+        onPdf: () => openPdf(view.paper),
         onBack: () => setView({ kind: 'paper', paper: view.paper }),
       });
     }
@@ -477,6 +608,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
         translating,
         titleTranslation: titleTranslations[view.paper.id],
         onRead: openReader,
+        onPdf: openPdf,
         onCite: (items) => setCitation({ papers: items }),
       });
     }
@@ -518,6 +650,10 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
           worksCount: sourceInfo?.worksCount,
           isOa: sourceInfo?.isOa,
           homepage: sourceInfo?.homepage,
+          metrics: sourceInfo?.metrics,
+          userIf: view.journal.userIf,
+          followed: followed.has(view.journal.id),
+          onToggleFollow: () => toggleFollow(view.journal),
         }),
         h('div', { className: 'musee-section-head', style: { marginTop: '20px', gap: '12px', flexWrap: 'wrap' } },
           h('h2', null, journalYear ? String(journalYear) : t('journal.papers')),
@@ -608,7 +744,8 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
       h(
         'nav',
         { className: 'musee-nav' },
-        h('button', { type: 'button', className: `musee-nav-btn ${view.kind !== 'library' ? 'active' : ''}`, onClick: goDiscover }, t('nav.discover')),
+        h('button', { type: 'button', className: `musee-nav-btn ${view.kind === 'home' ? 'active' : ''}`, onClick: goHome }, t('nav.home')),
+        h('button', { type: 'button', className: `musee-nav-btn ${view.kind !== 'home' && view.kind !== 'library' ? 'active' : ''}`, onClick: goDiscover }, t('nav.discover')),
         h(
           'button',
           { type: 'button', className: `musee-nav-btn ${view.kind === 'library' ? 'active' : ''}`, onClick: goLibrary },
