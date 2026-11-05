@@ -116,7 +116,7 @@ export function PdfViewer({ paper, item, t, targetLang, onBack, onEnsureSaved, o
       const renderTask = page.render({
         canvasContext: context,
         viewport,
-        transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null,
+        transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined,
       });
       renderRef.current = renderTask;
       await renderTask.promise.catch((reason) => {

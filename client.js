@@ -15,6 +15,7 @@ window.__ModuleLoader__.load({
         useCallback,
         useSyncExternalStore
       } = React;
+      var react_default = React;
 
       // src/client/api.js
       function museeToken() {
@@ -4662,7 +4663,7 @@ window.__ModuleLoader__.load({
             const renderTask = page.render({
               canvasContext: context,
               viewport,
-              transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
+              transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : void 0
             });
             renderRef.current = renderTask;
             await renderTask.promise.catch((reason) => {
@@ -5743,6 +5744,30 @@ window.__ModuleLoader__.load({
       }
 
       // src/client/index.jsx
+      var PanelBoundary = class extends react_default.Component {
+        constructor(props) {
+          super(props);
+          this.state = { error: null };
+        }
+        static getDerivedStateFromError(error) {
+          return { error };
+        }
+        componentDidCatch(error) {
+          console.error("[musée] panel render failed", error);
+        }
+        render() {
+          if (this.state.error) {
+            return h(
+              "div",
+              { style: { padding: "48px 24px", color: "var(--dsw-alias-label-primary)", fontFamily: "system-ui, sans-serif" } },
+              h("h2", { style: { margin: "0 0 8px" } }, "Musée 面板出错了"),
+              h("p", { style: { color: "var(--dsw-alias-label-secondary)", margin: "0 0 16px" } }, String(this.state.error.message || this.state.error)),
+              h("button", { type: "button", className: "musee-btn", onClick: () => window.location.reload() }, "刷新页面")
+            );
+          }
+          return this.props.children;
+        }
+      };
       function createPanel(ctx) {
         return function MuséePanel() {
           const [lang, setLangState] = useState(() => readStoredLang(ctx));
@@ -5774,7 +5799,7 @@ window.__ModuleLoader__.load({
             }
             setTranslateTitlesState(next);
           };
-          return h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles });
+          return h(PanelBoundary, null, h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles }));
         };
       }
       function MuséeIcon({ size = 18, active = false }) {

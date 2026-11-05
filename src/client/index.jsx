@@ -1,6 +1,34 @@
-import { h, useMemo, useState } from './react.js';
+import React, { h, useMemo, useState } from './react.js';
 import { App } from './app.jsx';
 import { makeT, readStoredLang, readStoredTarget, readStoredTitles } from './i18n.js';
+
+class PanelBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error) {
+    console.error('[musée] panel render failed', error);
+  }
+
+  render() {
+    if (this.state.error) {
+      return h(
+        'div',
+        { style: { padding: '48px 24px', color: 'var(--dsw-alias-label-primary)', fontFamily: 'system-ui, sans-serif' } },
+        h('h2', { style: { margin: '0 0 8px' } }, 'Musée 面板出错了'),
+        h('p', { style: { color: 'var(--dsw-alias-label-secondary)', margin: '0 0 16px' } }, String(this.state.error.message || this.state.error)),
+        h('button', { type: 'button', className: 'musee-btn', onClick: () => window.location.reload() }, '刷新页面'),
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function createPanel(ctx) {
   return function MuséePanel() {
@@ -40,7 +68,7 @@ function createPanel(ctx) {
       setTranslateTitlesState(next);
     };
 
-    return h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles });
+    return h(PanelBoundary, null, h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles }));
   };
 }
 
