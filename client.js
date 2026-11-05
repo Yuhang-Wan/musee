@@ -20,11 +20,28 @@ window.__ModuleLoader__.load({
       function museeToken() {
         return document.querySelector('meta[name="musee-token"]')?.getAttribute("content") || "";
       }
+      var tokenPromise = null;
+      async function ensureToken() {
+        const inline = museeToken();
+        if (inline) return inline;
+        if (!tokenPromise) {
+          tokenPromise = fetch("/musee/api/handshake", { headers: { accept: "application/json" } }).then(async (response) => {
+            if (!response.ok) throw new Error("NO_TOKEN");
+            const data = await response.json();
+            if (!data.token) throw new Error("NO_TOKEN");
+            return data.token;
+          }).catch((error) => {
+            tokenPromise = null;
+            throw error;
+          });
+        }
+        return tokenPromise;
+      }
       function tFormat(template, params = {}) {
         return String(template).replace(/\{(\w+)\}/g, (_, key) => params[key] === void 0 ? `{${key}}` : String(params[key]));
       }
       async function request(path, options = {}) {
-        const token = museeToken();
+        const token = await ensureToken();
         if (!token) throw new Error("NO_TOKEN");
         const response = await fetch(`/musee/api${path}`, {
           method: options.method || "GET",
@@ -51,7 +68,7 @@ window.__ModuleLoader__.load({
         cite: (papers, format) => request("/cite", { method: "POST", body: { papers, format } })
       };
       async function downloadExport(format, filename) {
-        const token = museeToken();
+        const token = await ensureToken();
         if (!token) throw new Error("NO_TOKEN");
         const response = await fetch(`/musee/api/export?format=${encodeURIComponent(format)}`, {
           headers: { "x-musee-token": token }

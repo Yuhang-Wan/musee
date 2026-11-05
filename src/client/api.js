@@ -2,12 +2,38 @@ export function museeToken() {
   return document.querySelector('meta[name="musee-token"]')?.getAttribute('content') || '';
 }
 
+let tokenPromise = null;
+
+/**
+ * Prefer the token injected into the page head. When the page loaded before
+ * the plugin was installed, ask the Host over a same-origin handshake instead
+ * of forcing the reader to reload.
+ */
+export async function ensureToken() {
+  const inline = museeToken();
+  if (inline) return inline;
+  if (!tokenPromise) {
+    tokenPromise = fetch('/musee/api/handshake', { headers: { accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('NO_TOKEN');
+        const data = await response.json();
+        if (!data.token) throw new Error('NO_TOKEN');
+        return data.token;
+      })
+      .catch((error) => {
+        tokenPromise = null;
+        throw error;
+      });
+  }
+  return tokenPromise;
+}
+
 export function tFormat(template, params = {}) {
   return String(template).replace(/\{(\w+)\}/g, (_, key) => (params[key] === undefined ? `{${key}}` : String(params[key])));
 }
 
 async function request(path, options = {}) {
-  const token = museeToken();
+  const token = await ensureToken();
   if (!token) throw new Error('NO_TOKEN');
   const response = await fetch(`/musee/api${path}`, {
     method: options.method || 'GET',
@@ -36,7 +62,7 @@ export const api = {
 };
 
 export async function downloadExport(format, filename) {
-  const token = museeToken();
+  const token = await ensureToken();
   if (!token) throw new Error('NO_TOKEN');
   const response = await fetch(`/musee/api/export?format=${encodeURIComponent(format)}`, {
     headers: { 'x-musee-token': token },

@@ -37,6 +37,26 @@ function resolveDataDir(config) {
   return path.resolve(configured);
 }
 
+/**
+ * The page may predate the plugin installation, so its <head> can lack the
+ * injected token meta. A same-origin handshake lets the freshly loaded Client
+ * module obtain the run token without a full page reload. Cross-site browser
+ * requests are refused, and their responses are unreadable without CORS.
+ */
+function isSameOrigin(request, url) {
+  const site = request.headers.get('sec-fetch-site');
+  if (site && site !== 'same-origin' && site !== 'none') return false;
+  const origin = request.headers.get('origin');
+  if (origin) {
+    try {
+      return new URL(origin).host === url.host;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 function disciplinePayload() {
   return DISCIPLINES.map((discipline) => ({
     ...discipline,
@@ -186,6 +206,12 @@ export function createMusee(ctx, config = {}) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/musee/api')) return json({ error: '接口不存在。' }, 404);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+
+    if (url.pathname === '/musee/api/handshake' && request.method === 'GET') {
+      if (!isSameOrigin(request, url)) return json({ error: '跨站请求被拒绝。' }, 403);
+      return json({ token, version: VERSION });
+    }
+
     const supplied = request.headers.get('x-musee-token') || '';
     if (supplied !== token) {
       return json({ error: '未授权的请求：请刷新页面后再试。' }, 401);
