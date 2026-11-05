@@ -58,6 +58,12 @@ window.__ModuleLoader__.load({
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const blob = await response.blob();
+        saveBlob(blob, filename);
+      }
+      function downloadText(filename, text, mime = "text/plain;charset=utf-8") {
+        saveBlob(new Blob([text], { type: mime }), filename);
+      }
+      function saveBlob(blob, filename) {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = url;
@@ -741,6 +747,16 @@ window.__ModuleLoader__.load({
             showToast(error.message);
           }
         };
+        const exportSelected = async (format, filename) => {
+          try {
+            const data = await api.cite(selectedItems, format);
+            const mime = format === "bibtex" ? "application/x-bibtex;charset=utf-8" : "application/x-research-info-systems;charset=utf-8";
+            downloadText(filename, data.text, mime);
+            showToast(t("toast.exported"));
+          } catch (error) {
+            showToast(error.message);
+          }
+        };
         return h(
           "div",
           { className: "musee-page" },
@@ -756,6 +772,7 @@ window.__ModuleLoader__.load({
               )
             ),
             h("div", { style: { flex: 1 } }),
+            h(Button, { size: "sm", onClick: () => exportWith("md", "musee-library.md") }, t("library.exportMd")),
             filtered.length ? h("button", { type: "button", className: "musee-back", onClick: toggleAll }, t("library.selectAll")) : null
           ),
           !items.length ? h(Empty, { title: t("library.empty") }) : !filtered.length ? h(Empty, { title: t("empty") }) : h(
@@ -798,9 +815,8 @@ window.__ModuleLoader__.load({
             { className: "musee-batchbar" },
             h("strong", null, tFormat(t("library.selected"), { n: selected.size })),
             h(Button, { variant: "primary", size: "sm", onClick: () => onCite(selectedItems) }, t("library.cite")),
-            h(Button, { size: "sm", onClick: () => exportWith("bibtex", "musee-library.bib") }, t("library.exportBibtex")),
-            h(Button, { size: "sm", onClick: () => exportWith("ris", "musee-library.ris") }, t("library.exportRis")),
-            h(Button, { size: "sm", onClick: () => exportWith("md", "musee-library.md") }, t("library.exportMd")),
+            h(Button, { size: "sm", onClick: () => exportSelected("bibtex", "musee-selection.bib") }, t("library.exportBibtex")),
+            h(Button, { size: "sm", onClick: () => exportSelected("ris", "musee-selection.ris") }, t("library.exportRis")),
             h(Button, { variant: "danger", size: "sm", onClick: async () => {
               for (const item of selectedItems) await onRemove(item);
               setSelected(/* @__PURE__ */ new Set());

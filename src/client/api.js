@@ -43,6 +43,14 @@ export async function downloadExport(format, filename) {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const blob = await response.blob();
+  saveBlob(blob, filename);
+}
+
+export function downloadText(filename, text, mime = 'text/plain;charset=utf-8') {
+  saveBlob(new Blob([text], { type: mime }), filename);
+}
+
+function saveBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;

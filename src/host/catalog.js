@@ -2,7 +2,7 @@
  * Curated journal catalogue and discipline metadata for Musee.
  * Source ids are OpenAlex `S...` identifiers resolved from each journal's ISSN.
  */
-export const VERSION = '0.1.4';
+export const VERSION = '0.1.5';
 
 export const DISCIPLINES = [
   {
