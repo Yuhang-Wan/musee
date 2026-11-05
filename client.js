@@ -5808,7 +5808,7 @@ window.__ModuleLoader__.load({
           );
         }
       };
-      globalThis.__MUSÉE_PLUGIN__ = plugin;
+      globalThis.__MUSEE_PLUGIN__ = plugin;
     })();
 
     return globalThis.__MUSEE_PLUGIN__;

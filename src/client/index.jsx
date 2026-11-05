@@ -76,4 +76,4 @@ const plugin = {
   },
 };
 
-globalThis.__MUSÉE_PLUGIN__ = plugin;
+globalThis.__MUSEE_PLUGIN__ = plugin;
