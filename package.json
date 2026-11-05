@@ -1,6 +1,6 @@
 {
   "name": "dsh-musee",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Musée — read journals and preprints inside DeepSeek Harness, with academic translation, citations, and reading notes.",
   "license": "MIT",
   "repository": {
@@ -29,6 +29,7 @@
   "files": [
     "index.js",
     "client.js",
+    "assets/pdf.worker.min.mjs",
     "src/host",
     "cordis.patch.yml",
     "locale/*.json",

@@ -12,6 +12,12 @@ const platform = `${process.platform}-${process.arch}`;
 const binary = path.join(root, 'tools', 'node_modules', '@esbuild', platform, process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild');
 
 await fs.mkdir(buildDir, { recursive: true });
+const assetsDir = path.join(root, 'assets');
+await fs.mkdir(assetsDir, { recursive: true });
+await fs.copyFile(
+  path.join(root, 'tools', 'node_modules', 'pdfjs-dist', 'build', 'pdf.worker.min.mjs'),
+  path.join(assetsDir, 'pdf.worker.min.mjs'),
+);
 
 const result = spawnSync(
   binary,

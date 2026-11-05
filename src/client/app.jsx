@@ -317,9 +317,19 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
       const data = await api.save(paper);
       setLibrary(data.items || []);
       showToast(t('toast.saved'));
+      return data.item;
     } catch (error) {
       showToast(errorText(error));
+      return null;
     }
+  };
+
+  const ensureSaved = async (paper) => {
+    const existing = libraryById.get(paper.id);
+    if (existing) return existing;
+    const data = await api.save(paper);
+    setLibrary(data.items || []);
+    return data.item;
   };
 
   const updateItem = async (id, patch) => {
@@ -591,8 +601,12 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
     if (view.kind === 'pdf') {
       return h(PdfViewer, {
         paper: view.paper,
+        item: libraryById.get(view.paper.id),
         t,
+        targetLang,
         onBack: () => setView({ kind: 'paper', paper: view.paper }),
+        onEnsureSaved: ensureSaved,
+        onUpdate: updateItem,
       });
     }
 

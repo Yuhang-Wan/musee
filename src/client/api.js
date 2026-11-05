@@ -71,6 +71,10 @@ export const api = {
     const token = await ensureToken();
     return `/musee/api/pdf?arxivId=${encodeURIComponent(arxivId)}&token=${encodeURIComponent(token)}`;
   },
+  pdfWorkerUrl: async () => {
+    const token = await ensureToken();
+    return `/musee/api/pdf-worker?token=${encodeURIComponent(token)}`;
+  },
   save: (paper) => request('/library', { method: 'POST', body: { action: 'save', paper } }),
   update: (id, patch) => request('/library', { method: 'POST', body: { action: 'update', id, patch } }),
   remove: (id) => request('/library', { method: 'POST', body: { action: 'remove', id } }),

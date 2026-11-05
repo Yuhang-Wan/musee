@@ -5,6 +5,7 @@
   "description": "Build tooling for the Musee Client bundle (not part of the published plugin).",
   "dependencies": {
     "dompurify": "3.4.17",
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "pdfjs-dist": "4.10.38"
   }
 }

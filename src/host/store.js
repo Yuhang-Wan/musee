@@ -98,6 +98,7 @@ export async function createStore(dataDir) {
         status: existing.status || 'unread',
         note: existing.note || '',
         tags: existing.tags || [],
+        pdfAnnotations: existing.pdfAnnotations || [],
         savedAt: existing.savedAt || stamp,
         updatedAt: stamp,
       };
@@ -107,6 +108,7 @@ export async function createStore(dataDir) {
         status: 'unread',
         note: '',
         tags: [],
+        pdfAnnotations: [],
         savedAt: stamp,
         updatedAt: stamp,
       });
@@ -124,6 +126,24 @@ export async function createStore(dataDir) {
     if (typeof patch.note === 'string') item.note = patch.note.slice(0, 200000);
     if (Array.isArray(patch.tags)) {
       item.tags = [...new Set(patch.tags.map((tag) => String(tag).trim()).filter(Boolean))].slice(0, 24);
+    }
+    if (Array.isArray(patch.pdfAnnotations)) {
+      item.pdfAnnotations = patch.pdfAnnotations.slice(0, 400).map((annotation) => ({
+        id: String(annotation.id || '').slice(0, 80),
+        page: Math.max(1, Number(annotation.page) || 1),
+        text: String(annotation.text || '').slice(0, 4000),
+        note: String(annotation.note || '').slice(0, 4000),
+        color: String(annotation.color || '#f5c542').slice(0, 20),
+        createdAt: String(annotation.createdAt || nowIso()).slice(0, 40),
+        rects: Array.isArray(annotation.rects)
+          ? annotation.rects.slice(0, 120).map((rect) => ({
+              x: Number(rect.x) || 0,
+              y: Number(rect.y) || 0,
+              w: Number(rect.w) || 0,
+              h: Number(rect.h) || 0,
+            }))
+          : [],
+      })).filter((annotation) => annotation.id && annotation.text);
     }
     item.updatedAt = nowIso();
     await persistLibrary();
@@ -149,6 +169,14 @@ export async function createStore(dataDir) {
       if (item.tags?.length) lines.push(`**标签**：${item.tags.join(', ')}  `);
       lines.push('');
       if (item.note) lines.push(item.note, '');
+      if (item.pdfAnnotations?.length) {
+        lines.push('**PDF 批注**：', '');
+        for (const annotation of item.pdfAnnotations) {
+          lines.push(`> p.${annotation.page}：${annotation.text}`);
+          if (annotation.note) lines.push('', annotation.note);
+          lines.push('');
+        }
+      }
       lines.push('---', '');
     }
     return lines.join('\n');

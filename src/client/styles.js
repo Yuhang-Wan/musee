@@ -495,6 +495,60 @@ export const CSS = `
 
 .musee-pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--dsw-alias-bg-base); }
 .musee-pdf-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--dsw-alias-bg-layer-1); }
+.musee-pdf-head { gap: 8px; }
+.musee-pdf-pageinfo, .musee-pdf-zoom { font-size: 12px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
+.musee-pdf-actionerror { padding: 8px 16px 0; }
+.musee-pdf-body { flex: 1 1 auto; display: flex; min-height: 0; }
+.musee-pdf-scroll { flex: 1 1 auto; min-width: 0; overflow: auto; background: var(--dsw-alias-bg-layer-2); padding: 20px; }
+.musee-pdf-stage { display: flex; justify-content: center; min-height: 100%; }
+.musee-pdf-page {
+  position: relative; flex: 0 0 auto; background: #fff;
+  box-shadow: 0 10px 34px rgba(15, 23, 42, .18);
+}
+.musee-pdf-canvas { position: absolute; inset: 0; display: block; }
+.musee-pdf-text {
+  position: absolute; inset: 0; overflow: hidden; line-height: 1;
+  text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2;
+}
+.musee-pdf-text span, .musee-pdf-text br {
+  position: absolute; color: transparent; white-space: pre; cursor: text; transform-origin: 0 0;
+}
+.musee-pdf-text ::selection { background: rgba(180, 35, 24, .25); }
+.musee-pdf-highlights { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.musee-pdf-hl { position: absolute; opacity: .32; mix-blend-mode: multiply; border-radius: 2px; }
+.musee-pdf-side {
+  flex: 0 0 280px; width: 280px; overflow: auto; padding: 12px;
+  border-left: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1);
+}
+.musee-pdf-side-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.musee-pdf-side-head h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.musee-pdf-side-head span { color: var(--dsw-alias-label-secondary); font-size: 11px; }
+.musee-pdf-sidehint { color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.6; margin: 12px 0 0; }
+.musee-pdf-ann { border-bottom: 1px solid var(--dsw-alias-border-l1); padding: 8px 0; position: relative; }
+.musee-pdf-ann-main { display: flex; gap: 8px; width: 100%; text-align: left; border: 0; background: transparent; padding: 0; cursor: pointer; color: var(--dsw-alias-label-primary); }
+.musee-pdf-ann-page { color: var(--musee-accent); font-size: 11px; flex: 0 0 auto; }
+.musee-pdf-ann-text { font-size: 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.musee-pdf-ann-note { margin-top: 5px; font-size: 11.5px; line-height: 1.55; color: var(--dsw-alias-label-secondary); white-space: pre-wrap; }
+.musee-pdf-ann-actions { display: flex; gap: 6px; margin-top: 4px; }
+.musee-pdf-ann-action { border: 0; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; font-size: 12px; padding: 0 3px; }
+.musee-pdf-ann-action:hover { color: var(--musee-accent); }
+.musee-pdf-translation { margin-top: 16px; border-top: 1px solid var(--dsw-alias-border-l1); padding-top: 12px; }
+.musee-pdf-translation-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+.musee-pdf-translation-head .musee-pdf-ann-action { margin-left: auto; }
+.musee-pdf-translation-body { font-size: 13px; line-height: 1.75; white-space: pre-wrap; }
+.musee-pdf-toolbar {
+  position: fixed; transform: translate(-50%, -100%); z-index: 85;
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--dsw-alias-bg-overlay);
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--dsw-alias-label-primary) 18%, transparent);
+}
+.musee-pdf-quote {
+  margin: 0 0 12px; padding: 10px 12px; border-left: 3px solid var(--musee-accent);
+  background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px; line-height: 1.65; max-height: 120px; overflow: auto;
+}
 
 /* Editorial direction: serif headlines, hairline rules, a dark lead visual. */
 .musee-root {

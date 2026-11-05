@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, RECOMMENDED_JOURNALS, VERSION, journalsFor } from './catalog.js';
@@ -99,6 +100,12 @@ export function createMusee(ctx, config = {}) {
 
   const translator = createTranslator({ ctx, config, cache: translationCache });
   const mailto = String(config.mailto || '').trim();
+  let pdfWorker = null;
+  try {
+    pdfWorker = readFileSync(new URL('../../assets/pdf.worker.min.mjs', import.meta.url));
+  } catch (error) {
+    console.warn('[musee] PDF worker asset is missing:', error?.message || error);
+  }
 
   storePromise
     .then(async (store) => {
@@ -257,6 +264,16 @@ export function createMusee(ctx, config = {}) {
       }
     }
 
+    if (pathname === '/pdf-worker') {
+      if (!pdfWorker) return json({ error: 'PDF worker 资源缺失。' }, 503);
+      return new Response(pdfWorker, {
+        headers: {
+          'content-type': 'text/javascript; charset=utf-8',
+          'cache-control': 'public, max-age=3600',
+        },
+      });
+    }
+
     if (pathname === '/pdf') {
       const arxivId = (url.searchParams.get('arxivId') || '').trim().replace(/^arxiv:/i, '').replace(/v\d+$/, '');
       if (!/^[A-Za-z0-9][A-Za-z0-9.\-/]{2,40}$/.test(arxivId) || arxivId.includes('..')) {
@@ -334,7 +351,9 @@ export function createMusee(ctx, config = {}) {
 
     const supplied =
       request.headers.get('x-musee-token') ||
-      (url.pathname === '/musee/api/pdf' ? url.searchParams.get('token') || '' : '');
+      (['/musee/api/pdf', '/musee/api/pdf-worker'].includes(url.pathname)
+        ? url.searchParams.get('token') || ''
+        : '');
     if (supplied !== token) {
       return json({ error: '未授权的请求：请刷新页面后再试。' }, 401);
     }
