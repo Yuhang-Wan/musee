@@ -561,6 +561,18 @@ export const CSS = `
   .musee-feed-grid { border-left: 0; }
 }
 
+/* Red is the editorial accent: brand text, small kickers, and primary actions only. */
+.musee-brand-name { color: var(--musee-accent); }
+.musee-btn.primary { border-color: var(--musee-accent); color: var(--musee-accent); }
+.musee-btn.primary.active { background: color-mix(in srgb, var(--musee-accent) 10%, transparent); }
+.musee-nav-btn.active { color: var(--musee-accent); }
+.musee-follow-btn.active {
+  color: var(--musee-accent);
+  border-color: color-mix(in srgb, var(--musee-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--musee-accent) 10%, transparent);
+}
+.musee-cover-mark { color: #f87171; opacity: 1; font-weight: 600; }
+
 
 @media (max-width: 920px) {
   .musee-rail { display: none; }

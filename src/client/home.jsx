@@ -49,7 +49,7 @@ function HeroArt() {
       h('path', { d: 'M40 212 L215 196 M40 236 L200 222 M40 260 L180 248', stroke: '#f0d49b', strokeWidth: '1.2', opacity: '0.55' }),
     ),
     h('text', { x: '40', y: '470', fill: '#f7f0df', opacity: '0.08', fontFamily: 'Georgia, serif', fontSize: '190', fontWeight: '700' }, 'M'),
-    h('text', { x: '92', y: '88', fill: '#f0d49b', opacity: '0.85', fontFamily: 'Georgia, serif', fontSize: '13', letterSpacing: '6' }, 'MUSEE'),
+    h('text', { x: '92', y: '88', fill: '#e05252', opacity: '0.95', fontFamily: 'Georgia, serif', fontSize: '13', letterSpacing: '6' }, 'MUSÉE'),
   );
 }
 

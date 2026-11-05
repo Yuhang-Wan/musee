@@ -38,6 +38,13 @@ function issueLabel(paper) {
   return [volume, issue, paper.year].filter(Boolean).join(' ');
 }
 
+function seriesLabel(series) {
+  if (series === 'nature') return 'Nature';
+  if (series === 'science') return 'Science';
+  if (series === 'cell') return 'Cell';
+  return '';
+}
+
 export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles }) {
   const [boot, setBoot] = useState(null);
   const [bootError, setBootError] = useState('');
@@ -400,6 +407,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
           'div',
           { className: 'musee-venue-meta' },
           options.issn ? h('span', null, options.issn) : null,
+          venue.series ? h(Pill, { tone: 'brand' }, seriesLabel(venue.series)) : null,
           options.userIf ? h('span', { title: t('metrics.ifHint') }, `${t('metrics.if')} ${options.userIf}`) : null,
           options.metrics?.twoYearMeanCitedness
             ? h(
@@ -504,6 +512,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
                   { className: 'musee-journal-meta' },
                   h('span', null, journal.issn),
                   h('span', null, journal.short),
+                  journal.series ? h('span', null, seriesLabel(journal.series)) : null,
                   journal.userIf ? h('span', null, `${t('metrics.if')} ${journal.userIf}`) : null,
                 ),
               ),
@@ -544,18 +553,20 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
           ),
         ),
       ),
-      h(
-        'div',
-        { className: 'musee-section' },
-        h('div', { className: 'musee-section-head' }, h('h2', null, t('discover.arxiv')), h('span', null, t('arxiv.hint'))),
-        h(
-          'div',
-          { className: 'musee-arxiv-row' },
-          (currentDiscipline?.arxiv || []).map((category) =>
-            h(Button, { key: category, onClick: () => openArxiv(category) }, category),
-          ),
-        ),
-      ),
+      (currentDiscipline?.arxiv || []).length
+        ? h(
+            'div',
+            { className: 'musee-section' },
+            h('div', { className: 'musee-section-head' }, h('h2', null, t('discover.arxiv')), h('span', null, t('arxiv.hint'))),
+            h(
+              'div',
+              { className: 'musee-arxiv-row' },
+              (currentDiscipline?.arxiv || []).map((category) =>
+                h(Button, { key: category, onClick: () => openArxiv(category) }, category),
+              ),
+            ),
+          )
+        : null,
     );
   };
 
@@ -841,23 +852,29 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
             ),
           ),
         ),
-        h('div', { className: 'musee-rail-title' }, 'arXiv'),
-        h(
-          'div',
-          { className: 'musee-rail-group' },
-          (currentDiscipline?.arxiv || []).map((category) =>
-            h(
-              'button',
-              {
-                key: category,
-                type: 'button',
-                className: `musee-rail-item ${view.kind === 'arxiv' && view.category === category ? 'active' : ''}`,
-                onClick: () => openArxiv(category),
-              },
-              category,
-            ),
-          ),
-        ),
+        (currentDiscipline?.arxiv || []).length
+          ? h(
+              'div',
+              null,
+              h('div', { className: 'musee-rail-title' }, 'arXiv'),
+              h(
+                'div',
+                { className: 'musee-rail-group' },
+                (currentDiscipline?.arxiv || []).map((category) =>
+                  h(
+                    'button',
+                    {
+                      key: category,
+                      type: 'button',
+                      className: `musee-rail-item ${view.kind === 'arxiv' && view.category === category ? 'active' : ''}`,
+                      onClick: () => openArxiv(category),
+                    },
+                    category,
+                  ),
+                ),
+              ),
+            )
+          : null,
       ),
       h('main', { className: 'musee-main', ref: mainRef }, renderMain()),
     ),

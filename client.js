@@ -670,6 +670,18 @@ window.__ModuleLoader__.load({
       .musee-feed-grid { border-left: 0; }
     }
 
+    /* Red is the editorial accent: brand text, small kickers, and primary actions only. */
+    .musee-brand-name { color: var(--musee-accent); }
+    .musee-btn.primary { border-color: var(--musee-accent); color: var(--musee-accent); }
+    .musee-btn.primary.active { background: color-mix(in srgb, var(--musee-accent) 10%, transparent); }
+    .musee-nav-btn.active { color: var(--musee-accent); }
+    .musee-follow-btn.active {
+      color: var(--musee-accent);
+      border-color: color-mix(in srgb, var(--musee-accent) 55%, transparent);
+      background: color-mix(in srgb, var(--musee-accent) 10%, transparent);
+    }
+    .musee-cover-mark { color: #f87171; opacity: 1; font-weight: 600; }
+
 
     @media (max-width: 920px) {
       .musee-rail { display: none; }
@@ -1332,7 +1344,7 @@ window.__ModuleLoader__.load({
             "span",
             { className: "musee-cover-foot" },
             h("span", null, issue || "LATEST"),
-            h("span", { className: "musee-cover-mark" }, "MUSEE")
+            h("span", { className: "musee-cover-mark" }, "MUSÉE")
           )
         );
       }
@@ -1344,14 +1356,14 @@ window.__ModuleLoader__.load({
         { id: "fr", label: "Français" }
       ];
       var EN = {
-        brand: "Musee",
+        brand: "Musée",
         tagline: "A reading desk for journals and preprints",
         "nav.discover": "Discover",
         "nav.conferences": "Conferences",
         "nav.library": "Library",
         "nav.home": "Home",
         "home.title": "Home",
-        "home.kicker": "MUSEE · READING DESK",
+        "home.kicker": "MUSÉE · READING DESK",
         "home.headline": "Read journals into a knowledge base of your own",
         "home.read": "Read this paper",
         "home.openJournal": "Open journal",
@@ -1474,7 +1486,7 @@ window.__ModuleLoader__.load({
         "toast.translateFailed": "Translation failed: {message}",
         "toast.followed": "Journal followed",
         "toast.unfollowed": "Journal unfollowed",
-        "error.noToken": "Musee is not ready: refresh the page and try again.",
+        "error.noToken": "Musée is not ready: refresh the page and try again.",
         "error.refresh": "Refresh page",
         "error.load": "Failed to load: {message}",
         "error.retry": "Retry",
@@ -1489,7 +1501,7 @@ window.__ModuleLoader__.load({
         "conference.group.robotics": "Robotics",
         "settings.title": "Settings",
         "settings.language": "Language",
-        "settings.languageHint": "Changes the Musee panel only; it does not switch the whole app.",
+        "settings.languageHint": "Changes the Musée panel only; it does not switch the whole app.",
         "settings.translation": "Translation language",
         "settings.translationHint": "Titles and abstracts are translated into this language.",
         "settings.titles": "Title translation",
@@ -1498,21 +1510,21 @@ window.__ModuleLoader__.load({
         "settings.about": "About",
         "settings.version": "Version",
         "settings.dataDir": "Local data",
-        "settings.note": "Musee stores your library and cached translations locally. No account, no server, no telemetry.",
+        "settings.note": "Musée stores your library and cached translations locally. No account, no server, no telemetry.",
         "settings.close": "Close",
         "common.close": "Close",
         "common.cancel": "Cancel",
         empty: "Nothing here yet"
       };
       var ZH = {
-        brand: "Musee",
+        brand: "Musée",
         tagline: "期刊与预印本阅读台",
         "nav.discover": "发现",
         "nav.conferences": "顶会",
         "nav.library": "我的库",
         "nav.home": "首页",
         "home.title": "首页",
-        "home.kicker": "MUSEE · 期刊阅读台",
+        "home.kicker": "MUSÉE · 期刊阅读台",
         "home.headline": "把期刊读成自己的知识库",
         "home.read": "阅读这篇",
         "home.openJournal": "进入期刊",
@@ -1635,7 +1647,7 @@ window.__ModuleLoader__.load({
         "toast.translateFailed": "翻译失败：{message}",
         "toast.followed": "已关注该期刊",
         "toast.unfollowed": "已取消关注",
-        "error.noToken": "Musee 还没有就绪：请刷新页面后再试。",
+        "error.noToken": "Musée 还没有就绪：请刷新页面后再试。",
         "error.refresh": "刷新页面",
         "error.load": "加载失败：{message}",
         "error.retry": "重试",
@@ -1650,7 +1662,7 @@ window.__ModuleLoader__.load({
         "conference.group.robotics": "机器人",
         "settings.title": "设置",
         "settings.language": "语言",
-        "settings.languageHint": "只改变 Musee 面板，不切换整个应用的语言。",
+        "settings.languageHint": "只改变 Musée 面板，不切换整个应用的语言。",
         "settings.translation": "翻译语言",
         "settings.translationHint": "标题与摘要会翻译成这个语言。",
         "settings.titles": "标题翻译",
@@ -1659,21 +1671,21 @@ window.__ModuleLoader__.load({
         "settings.about": "关于",
         "settings.version": "版本",
         "settings.dataDir": "本地数据目录",
-        "settings.note": "Musee 把书库和译文缓存保存在本地，不需要账号，也没有服务器和遥测。",
+        "settings.note": "Musée 把书库和译文缓存保存在本地，不需要账号，也没有服务器和遥测。",
         "settings.close": "关闭",
         "common.close": "关闭",
         "common.cancel": "取消",
         empty: "暂无内容"
       };
       var FR = {
-        brand: "Musee",
+        brand: "Musée",
         tagline: "Un bureau de lecture pour revues et préprints",
         "nav.discover": "Découvrir",
         "nav.conferences": "Conférences",
         "nav.library": "Bibliothèque",
         "nav.home": "Accueil",
         "home.title": "Accueil",
-        "home.kicker": "MUSEE · CABINET DE LECTURE",
+        "home.kicker": "MUSÉE · CABINET DE LECTURE",
         "home.headline": "Faites de vos revues une bibliothèque vivante",
         "home.read": "Lire cet article",
         "home.openJournal": "Ouvrir la revue",
@@ -1796,7 +1808,7 @@ window.__ModuleLoader__.load({
         "toast.translateFailed": "Échec de la traduction : {message}",
         "toast.followed": "Revue suivie",
         "toast.unfollowed": "Revue retirée",
-        "error.noToken": "Musee n’est pas prêt : rechargez la page.",
+        "error.noToken": "Musée n’est pas prêt : rechargez la page.",
         "error.refresh": "Recharger la page",
         "error.load": "Échec du chargement : {message}",
         "error.retry": "Réessayer",
@@ -1811,7 +1823,7 @@ window.__ModuleLoader__.load({
         "conference.group.robotics": "Robotique",
         "settings.title": "Paramètres",
         "settings.language": "Langue",
-        "settings.languageHint": "Modifie uniquement le panneau Musee, pas toute l’application.",
+        "settings.languageHint": "Modifie uniquement le panneau Musée, pas toute l’application.",
         "settings.translation": "Langue de traduction",
         "settings.translationHint": "Les titres et résumés sont traduits dans cette langue.",
         "settings.titles": "Traduction des titres",
@@ -1820,7 +1832,7 @@ window.__ModuleLoader__.load({
         "settings.about": "À propos",
         "settings.version": "Version",
         "settings.dataDir": "Données locales",
-        "settings.note": "Musee conserve votre bibliothèque et les traductions en local. Sans compte, sans serveur, sans télémétrie.",
+        "settings.note": "Musée conserve votre bibliothèque et les traductions en local. Sans compte, sans serveur, sans télémétrie.",
         "settings.close": "Fermer",
         "common.close": "Fermer",
         "common.cancel": "Annuler",
@@ -4261,7 +4273,7 @@ window.__ModuleLoader__.load({
             h("path", { d: "M40 212 L215 196 M40 236 L200 222 M40 260 L180 248", stroke: "#f0d49b", strokeWidth: "1.2", opacity: "0.55" })
           ),
           h("text", { x: "40", y: "470", fill: "#f7f0df", opacity: "0.08", fontFamily: "Georgia, serif", fontSize: "190", fontWeight: "700" }, "M"),
-          h("text", { x: "92", y: "88", fill: "#f0d49b", opacity: "0.85", fontFamily: "Georgia, serif", fontSize: "13", letterSpacing: "6" }, "MUSEE")
+          h("text", { x: "92", y: "88", fill: "#e05252", opacity: "0.95", fontFamily: "Georgia, serif", fontSize: "13", letterSpacing: "6" }, "MUSÉE")
         );
       }
       function Home({ t, lang, feed, recommended, loading, error, followed, onOpenJournal, onOpenPaper, onDiscover, onToggleFollow, titleTranslations }) {
@@ -4474,6 +4486,12 @@ window.__ModuleLoader__.load({
         const volume = paper.volume ? `Vol. ${paper.volume}` : "";
         const issue = paper.issue ? `No. ${paper.issue}` : "";
         return [volume, issue, paper.year].filter(Boolean).join(" ");
+      }
+      function seriesLabel(series) {
+        if (series === "nature") return "Nature";
+        if (series === "science") return "Science";
+        if (series === "cell") return "Cell";
+        return "";
       }
       function App({ t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles }) {
         const [boot, setBoot] = useState(null);
@@ -4790,6 +4808,7 @@ window.__ModuleLoader__.load({
                 "div",
                 { className: "musee-venue-meta" },
                 options.issn ? h("span", null, options.issn) : null,
+                venue.series ? h(Pill, { tone: "brand" }, seriesLabel(venue.series)) : null,
                 options.userIf ? h("span", { title: t("metrics.ifHint") }, `${t("metrics.if")} ${options.userIf}`) : null,
                 options.metrics?.twoYearMeanCitedness ? h(
                   "span",
@@ -4887,6 +4906,7 @@ window.__ModuleLoader__.load({
                         { className: "musee-journal-meta" },
                         h("span", null, journal.issn),
                         h("span", null, journal.short),
+                        journal.series ? h("span", null, seriesLabel(journal.series)) : null,
                         journal.userIf ? h("span", null, `${t("metrics.if")} ${journal.userIf}`) : null
                       )
                     )
@@ -4927,7 +4947,7 @@ window.__ModuleLoader__.load({
                 )
               )
             ),
-            h(
+            (currentDiscipline?.arxiv || []).length ? h(
               "div",
               { className: "musee-section" },
               h("div", { className: "musee-section-head" }, h("h2", null, t("discover.arxiv")), h("span", null, t("arxiv.hint"))),
@@ -4938,7 +4958,7 @@ window.__ModuleLoader__.load({
                   (category) => h(Button, { key: category, onClick: () => openArxiv(category) }, category)
                 )
               )
-            )
+            ) : null
           );
         };
         const renderMain = () => {
@@ -5209,23 +5229,27 @@ window.__ModuleLoader__.load({
                   )
                 )
               ),
-              h("div", { className: "musee-rail-title" }, "arXiv"),
-              h(
+              (currentDiscipline?.arxiv || []).length ? h(
                 "div",
-                { className: "musee-rail-group" },
-                (currentDiscipline?.arxiv || []).map(
-                  (category) => h(
-                    "button",
-                    {
-                      key: category,
-                      type: "button",
-                      className: `musee-rail-item ${view.kind === "arxiv" && view.category === category ? "active" : ""}`,
-                      onClick: () => openArxiv(category)
-                    },
-                    category
+                null,
+                h("div", { className: "musee-rail-title" }, "arXiv"),
+                h(
+                  "div",
+                  { className: "musee-rail-group" },
+                  (currentDiscipline?.arxiv || []).map(
+                    (category) => h(
+                      "button",
+                      {
+                        key: category,
+                        type: "button",
+                        className: `musee-rail-item ${view.kind === "arxiv" && view.category === category ? "active" : ""}`,
+                        onClick: () => openArxiv(category)
+                      },
+                      category
+                    )
                   )
                 )
-              )
+              ) : null
             ),
             h("main", { className: "musee-main", ref: mainRef }, renderMain())
           ),
@@ -5248,7 +5272,7 @@ window.__ModuleLoader__.load({
 
       // src/client/index.jsx
       function createPanel(ctx) {
-        return function MuseePanel() {
+        return function MuséePanel() {
           const [lang, setLangState] = useState(() => readStoredLang(ctx));
           const [targetLang, setTargetLangState] = useState(() => readStoredTarget(readStoredLang(ctx)));
           const [translateTitles, setTranslateTitlesState] = useState(() => readStoredTitles(readStoredLang(ctx)));
@@ -5281,7 +5305,7 @@ window.__ModuleLoader__.load({
           return h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles });
         };
       }
-      function MuseeIcon({ size = 18, active = false }) {
+      function MuséeIcon({ size = 18, active = false }) {
         return h(
           "svg",
           {
@@ -5308,11 +5332,11 @@ window.__ModuleLoader__.load({
           ctx.slots.inject("main", () => ctx.slots.register({ name: "main", key: "musee" }, Panel));
           ctx.slots.inject(
             "sidebar.panellist",
-            () => ctx.slots.register({ name: "sidebar.panellist", id: "musee", order: 6, label: "Musee" }, MuseeIcon)
+            () => ctx.slots.register({ name: "sidebar.panellist", id: "musee", order: 6, label: "Musée" }, MuséeIcon)
           );
         }
       };
-      globalThis.__MUSEE_PLUGIN__ = plugin;
+      globalThis.__MUSÉE_PLUGIN__ = plugin;
     })();
 
     return globalThis.__MUSEE_PLUGIN__;

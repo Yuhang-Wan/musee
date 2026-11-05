@@ -3,7 +3,7 @@
  * Source ids are OpenAlex `S...` identifiers resolved from each venue's ISSN or name.
  * Descriptions are original Musee scope notes, not publisher copy.
  */
-export const VERSION = '0.5.0';
+export const VERSION = '0.5.1';
 
 export const DISCIPLINES = [
   {
@@ -36,6 +36,22 @@ export const DISCIPLINES = [
     },
     arxiv: ['cs.AI', 'cs.RO', 'cs.LG', 'cs.CV', 'cs.CL'],
   },
+  {
+    id: 'flagship',
+    name: { en: 'Flagship series', zh: '旗舰系列', fr: 'Séries phares' },
+    blurb: {
+      en: 'Nature, Science and Cell families',
+      zh: 'Nature / Science / Cell 及其子刊',
+      fr: 'Les familles Nature, Science et Cell',
+    },
+    arxiv: [],
+  },
+];
+
+export const SERIES = [
+  { id: 'nature', name: { en: 'Nature', zh: 'Nature 系', fr: 'Nature' } },
+  { id: 'science', name: { en: 'Science', zh: 'Science 系', fr: 'Science' } },
+  { id: 'cell', name: { en: 'Cell', zh: 'Cell 系', fr: 'Cell' } },
 ];
 
 export const JOURNALS = [
@@ -268,53 +284,172 @@ export const JOURNALS = [
 
   // Flagship and multidisciplinary journals, surfaced as recommendations on the home page.
   {
-    id: 'nature', discipline: 'flagship', recommended: true, name: 'Nature', short: 'NAT', issn: '0028-0836', openalex: 'S137773608',
+    id: 'nature', discipline: 'flagship', recommended: true, series: 'nature', name: 'Nature', short: 'NAT', issn: '0028-0836', openalex: 'S137773608',
     nameZh: '自然', nameFr: 'Nature',
     about: 'Multidisciplinary flagship journal covering all areas of natural science.',
     aboutZh: '跨学科旗舰期刊，覆盖自然科学各领域。',
     aboutFr: 'Revue phare multidisciplinaire couvrant toutes les sciences de la nature.',
   },
   {
-    id: 'science', discipline: 'flagship', recommended: true, name: 'Science', short: 'SCI', issn: '0036-8075', openalex: 'S3880285',
+    id: 'science', discipline: 'flagship', recommended: true, series: 'science', name: 'Science', short: 'SCI', issn: '0036-8075', openalex: 'S3880285',
     nameZh: '科学', nameFr: 'Science',
     about: 'AAAS flagship for peer-reviewed research across scientific disciplines.',
     aboutZh: '美国科学促进会旗舰期刊，覆盖多学科同行评议研究。',
     aboutFr: 'Revue phare de l’AAAS pour la recherche évaluée par les pairs dans toutes les disciplines.',
   },
   {
-    id: 'cell', discipline: 'flagship', recommended: true, name: 'Cell', short: 'CELL', issn: '0092-8674', openalex: 'S110447773',
+    id: 'cell', discipline: 'flagship', recommended: true, series: 'cell', name: 'Cell', short: 'CELL', issn: '0092-8674', openalex: 'S110447773',
     nameZh: '细胞', nameFr: 'Cell',
     about: 'Molecular and cellular biology, including translational and disease research.',
     aboutZh: '分子与细胞生物学，涵盖转化医学与疾病研究。',
     aboutFr: 'Biologie moléculaire et cellulaire, y compris la recherche translationnelle et sur les maladies.',
   },
   {
-    id: 'nature-communications', discipline: 'flagship', recommended: true, name: 'Nature Communications', short: 'NC', issn: '2041-1723', openalex: 'S64187185',
+    id: 'nature-communications', discipline: 'flagship', recommended: true, series: 'nature', name: 'Nature Communications', short: 'NC', issn: '2041-1723', openalex: 'S64187185',
     nameZh: '自然·通讯', nameFr: 'Nature Communications',
     about: 'Open-access multidisciplinary research across the natural sciences.',
     aboutZh: '开放获取的跨学科自然科学研究。',
     aboutFr: 'Recherche multidisciplinaire en libre accès dans les sciences de la nature.',
   },
   {
-    id: 'science-advances', discipline: 'flagship', recommended: true, name: 'Science Advances', short: 'SA', issn: '2375-2548', openalex: 'S2737427234',
+    id: 'science-advances', discipline: 'flagship', recommended: true, series: 'science', name: 'Science Advances', short: 'SA', issn: '2375-2548', openalex: 'S2737427234',
     nameZh: '科学·进展', nameFr: 'Science Advances',
     about: 'Open-access multidisciplinary research published by AAAS.',
     aboutZh: 'AAAS 出版的开放获取跨学科研究。',
     aboutFr: 'Recherche multidisciplinaire en libre accès publiée par l’AAAS.',
   },
   {
-    id: 'cell-reports', discipline: 'flagship', recommended: true, name: 'Cell Reports', short: 'CR', issn: '2211-1247', openalex: 'S169236886',
+    id: 'cell-reports', discipline: 'flagship', recommended: true, series: 'cell', name: 'Cell Reports', short: 'CR', issn: '2211-1247', openalex: 'S169236886',
     nameZh: '细胞报告', nameFr: 'Cell Reports',
     about: 'Open-access life-science research spanning cell biology and disease.',
     aboutZh: '开放获取的生命科学研究，覆盖细胞生物学与疾病。',
     aboutFr: 'Recherche en sciences de la vie en libre accès, de la biologie cellulaire aux maladies.',
   },
   {
-    id: 'nature-cities', discipline: 'flagship', recommended: true, name: 'Nature Cities', short: 'NCITY', issn: '2731-9997', openalex: 'S4390297069',
+    id: 'nature-cities', discipline: 'flagship', recommended: true, series: 'nature', name: 'Nature Cities', short: 'NCITY', issn: '2731-9997', openalex: 'S4390297069',
     nameZh: '自然·城市', nameFr: 'Nature Cities',
     about: 'Interdisciplinary urban research, from planning and governance to climate.',
     aboutZh: '跨学科城市研究，从规划治理到气候适应。',
     aboutFr: 'Recherche urbaine interdisciplinaire, de la planification au climat.',
+  },
+  {
+    id: 'nature-chemistry', discipline: 'flagship', series: 'nature', name: 'Nature Chemistry', short: 'NCHEM', issn: '1755-4330', openalex: 'S202193212',
+    nameZh: '自然·化学', nameFr: 'Nature Chemistry',
+    about: 'Chemistry across synthesis, catalysis, materials, and analysis.',
+    aboutZh: '化学合成、催化、材料与分析。',
+    aboutFr: 'Chimie : synthèse, catalyse, matériaux et analyse.',
+  },
+  {
+    id: 'nature-materials', discipline: 'flagship', series: 'nature', name: 'Nature Materials', short: 'NMAT', issn: '1476-1122', openalex: 'S103895331',
+    nameZh: '自然·材料', nameFr: 'Nature Materials',
+    about: 'Materials science from fundamental physics to applications.',
+    aboutZh: '材料科学，从基础物理到应用。',
+    aboutFr: 'Science des matériaux, de la physique fondamentale aux applications.',
+  },
+  {
+    id: 'nature-medicine', discipline: 'flagship', series: 'nature', name: 'Nature Medicine', short: 'NMED', issn: '1078-8956', openalex: 'S203256638',
+    nameZh: '自然·医学', nameFr: 'Nature Medicine',
+    about: 'Translational medicine and clinical research.',
+    aboutZh: '转化医学与临床研究。',
+    aboutFr: 'Médecine translationnelle et recherche clinique.',
+  },
+  {
+    id: 'nature-biotechnology', discipline: 'flagship', series: 'nature', name: 'Nature Biotechnology', short: 'NBT', issn: '1087-0156', openalex: 'S106963461',
+    nameZh: '自然·生物技术', nameFr: 'Nature Biotechnology',
+    about: 'Biotechnology research, methods, and applications.',
+    aboutZh: '生物技术研究、方法与应用。',
+    aboutFr: 'Recherche, méthodes et applications en biotechnologie.',
+  },
+  {
+    id: 'nature-methods', discipline: 'flagship', series: 'nature', name: 'Nature Methods', short: 'NMETH', issn: '1548-7091', openalex: 'S127827428',
+    nameZh: '自然·方法', nameFr: 'Nature Methods',
+    about: 'New methods and tools for life-science research.',
+    aboutZh: '生命科学研究的新方法与工具。',
+    aboutFr: 'Nouvelles méthodes et outils pour la recherche en sciences de la vie.',
+  },
+  {
+    id: 'nature-climate-change', discipline: 'flagship', series: 'nature', name: 'Nature Climate Change', short: 'NCC', issn: '1758-678X', openalex: 'S183584863',
+    nameZh: '自然·气候变化', nameFr: 'Nature Climate Change',
+    about: 'Climate science, impacts, adaptation, and policy.',
+    aboutZh: '气候科学、影响、适应与政策。',
+    aboutFr: 'Science du climat, impacts, adaptation et politiques.',
+  },
+  {
+    id: 'nature-sustainability', discipline: 'flagship', series: 'nature', name: 'Nature Sustainability', short: 'NSUST', issn: '2398-9629', openalex: 'S4210188283',
+    nameZh: '自然·可持续性', nameFr: 'Nature Sustainability',
+    about: 'Sustainability research across natural and social sciences.',
+    aboutZh: '跨自然科学与社会科学的可持续性研究。',
+    aboutFr: 'Recherche sur la durabilité, des sciences naturelles aux sciences sociales.',
+  },
+  {
+    id: 'nature-energy', discipline: 'flagship', series: 'nature', name: 'Nature Energy', short: 'NENERGY', issn: '2058-7546', openalex: 'S2764528046',
+    nameZh: '自然·能源', nameFr: 'Nature Energy',
+    about: 'Energy research, technology, and policy.',
+    aboutZh: '能源研究、技术与政策。',
+    aboutFr: 'Recherche, technologies et politiques de l’énergie.',
+  },
+  {
+    id: 'science-signaling', discipline: 'flagship', series: 'science', name: 'Science Signaling', short: 'SIG', issn: '1937-9145', openalex: 'S155937366',
+    nameZh: '科学·信号', nameFr: 'Science Signaling',
+    about: 'Cell signaling, regulatory networks, and systems biology.',
+    aboutZh: '细胞信号、调控网络与系统生物学。',
+    aboutFr: 'Signalisation cellulaire, réseaux de régulation et biologie des systèmes.',
+  },
+  {
+    id: 'science-immunology', discipline: 'flagship', series: 'science', name: 'Science Immunology', short: 'SI', issn: '2470-9468', openalex: 'S2764653179',
+    nameZh: '科学·免疫学', nameFr: 'Science Immunology',
+    about: 'Immunology across basic mechanisms and clinical research.',
+    aboutZh: '免疫学基础机制与临床研究。',
+    aboutFr: 'Immunologie, des mécanismes fondamentaux à la recherche clinique.',
+  },
+  {
+    id: 'science-translational-medicine', discipline: 'flagship', series: 'science', name: 'Science Translational Medicine', short: 'STM', issn: '1946-6234', openalex: 'S24207032',
+    nameZh: '科学·转化医学', nameFr: 'Science Translational Medicine',
+    about: 'Translating biomedical research into clinical practice.',
+    aboutZh: '把生物医学研究转化为临床实践。',
+    aboutFr: 'Transposer la recherche biomédicale en pratique clinique.',
+  },
+  {
+    id: 'molecular-cell', discipline: 'flagship', series: 'cell', name: 'Molecular Cell', short: 'MC', issn: '1097-2765', openalex: 'S156208185',
+    nameZh: '分子细胞', nameFr: 'Molecular Cell',
+    about: 'Molecular mechanisms of cellular processes.',
+    aboutZh: '细胞过程的分子机制。',
+    aboutFr: 'Mécanismes moléculaires des processus cellulaires.',
+  },
+  {
+    id: 'neuron', discipline: 'flagship', series: 'cell', name: 'Neuron', short: 'NEURON', issn: '0896-6273', openalex: 'S45757444',
+    nameZh: '神经元', nameFr: 'Neuron',
+    about: 'Neuroscience at the cellular, circuit, and systems level.',
+    aboutZh: '细胞、环路与系统层面的神经科学。',
+    aboutFr: 'Neurosciences aux niveaux cellulaire, des circuits et des systèmes.',
+  },
+  {
+    id: 'immunity', discipline: 'flagship', series: 'cell', name: 'Immunity', short: 'IMM', issn: '1074-7613', openalex: 'S199671312',
+    nameZh: '免疫', nameFr: 'Immunity',
+    about: 'Immunology and host defense mechanisms.',
+    aboutZh: '免疫学与宿主防御机制。',
+    aboutFr: 'Immunologie et mécanismes de défense de l’hôte.',
+  },
+  {
+    id: 'cancer-cell', discipline: 'flagship', series: 'cell', name: 'Cancer Cell', short: 'CC', issn: '1535-6108', openalex: 'S25671836',
+    nameZh: '癌细胞', nameFr: 'Cancer Cell',
+    about: 'Cancer biology and translational oncology.',
+    aboutZh: '肿瘤生物学与转化肿瘤学。',
+    aboutFr: 'Biologie du cancer et oncologie translationnelle.',
+  },
+  {
+    id: 'cell-stem-cell', discipline: 'flagship', series: 'cell', name: 'Cell Stem Cell', short: 'CSC', issn: '1934-5909', openalex: 'S128124174',
+    nameZh: '细胞·干细胞', nameFr: 'Cell Stem Cell',
+    about: 'Stem cell biology and regenerative medicine.',
+    aboutZh: '干细胞生物学与再生医学。',
+    aboutFr: 'Biologie des cellules souches et médecine régénérative.',
+  },
+  {
+    id: 'cell-metabolism', discipline: 'flagship', series: 'cell', name: 'Cell Metabolism', short: 'CMET', issn: '1550-4131', openalex: 'S177533077',
+    nameZh: '细胞·代谢', nameFr: 'Cell Metabolism',
+    about: 'Metabolic regulation and metabolic disease.',
+    aboutZh: '代谢调控与代谢疾病。',
+    aboutFr: 'Régulation métabolique et maladies métaboliques.',
   },
 ];
 

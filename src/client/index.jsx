@@ -3,7 +3,7 @@ import { App } from './app.jsx';
 import { makeT, readStoredLang, readStoredTarget, readStoredTitles } from './i18n.js';
 
 function createPanel(ctx) {
-  return function MuseePanel() {
+  return function MuséePanel() {
     const [lang, setLangState] = useState(() => readStoredLang(ctx));
     const [targetLang, setTargetLangState] = useState(() => readStoredTarget(readStoredLang(ctx)));
     const [translateTitles, setTranslateTitlesState] = useState(() => readStoredTitles(readStoredLang(ctx)));
@@ -44,7 +44,7 @@ function createPanel(ctx) {
   };
 }
 
-function MuseeIcon({ size = 18, active = false }) {
+function MuséeIcon({ size = 18, active = false }) {
   return h(
     'svg',
     {
@@ -71,9 +71,9 @@ const plugin = {
     const Panel = createPanel(ctx);
     ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: 'musee' }, Panel));
     ctx.slots.inject('sidebar.panellist', () =>
-      ctx.slots.register({ name: 'sidebar.panellist', id: 'musee', order: 6, label: 'Musee' }, MuseeIcon),
+      ctx.slots.register({ name: 'sidebar.panellist', id: 'musee', order: 6, label: 'Musée' }, MuséeIcon),
     );
   },
 };
 
-globalThis.__MUSEE_PLUGIN__ = plugin;
+globalThis.__MUSÉE_PLUGIN__ = plugin;

@@ -43,7 +43,7 @@ function paletteFor(kind, id) {
 
 /**
  * Original typographic cover art. Publisher cover images are copyrighted and
- * have no stable, licensed API, so Musee renders its own deterministic covers.
+ * have no stable, licensed API, so Musée renders its own deterministic covers.
  */
 export function JournalCover({ venue, kind = 'journal', size = 'md', issue = '' }) {
   const [from, to] = paletteFor(kind === 'conference' ? 'conference' : kind, venue?.id || venue?.name || '');
@@ -63,7 +63,7 @@ export function JournalCover({ venue, kind = 'journal', size = 'md', issue = '' 
       'span',
       { className: 'musee-cover-foot' },
       h('span', null, issue || 'LATEST'),
-      h('span', { className: 'musee-cover-mark' }, 'MUSEE'),
+      h('span', { className: 'musee-cover-mark' }, 'MUSÉE'),
     ),
   );
 }
