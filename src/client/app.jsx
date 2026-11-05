@@ -7,6 +7,7 @@ import { LibraryView } from './library.jsx';
 import { CitationDialog } from './citation.jsx';
 import { JournalCover } from './cover.jsx';
 import { SettingsDialog } from './settings.jsx';
+import { Reader } from './reader.jsx';
 
 function tr(t, key, params) {
   return tFormat(t(key), params);
@@ -232,6 +233,11 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
     scrollTop();
   };
 
+  const openReader = (paper) => {
+    setView({ kind: 'reader', paper });
+    scrollTop();
+  };
+
   const goDiscover = () => {
     setView({ kind: 'discover' });
     scrollTop();
@@ -448,6 +454,15 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
   };
 
   const renderMain = () => {
+    if (view.kind === 'reader') {
+      return h(Reader, {
+        paper: view.paper,
+        t,
+        targetLang,
+        onBack: () => setView({ kind: 'paper', paper: view.paper }),
+      });
+    }
+
     if (view.kind === 'paper') {
       return h(PaperDetail, {
         paper: view.paper,
@@ -461,6 +476,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
         translation,
         translating,
         titleTranslation: titleTranslations[view.paper.id],
+        onRead: openReader,
         onCite: (items) => setCitation({ papers: items }),
       });
     }

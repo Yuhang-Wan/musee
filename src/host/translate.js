@@ -32,6 +32,10 @@ const TITLES_ZH = `Translate the following JSON array of academic paper titles i
 
 const TITLES_FR = `Traduisez le tableau JSON suivant de titres d’articles académiques en français. Conservez les noms d’auteurs, acronymes, noms de modèles et de jeux de données, chiffres et termes techniques. N’expliquez pas et n’ajoutez aucune note. Renvoyez uniquement un tableau JSON de chaînes traduites dans le même ordre, par exemple ["traduction 1","traduction 2"]. Sans balises Markdown ni autre texte.`;
 
+const SECTION_ZH = `你是学术论文译者。把用户给出的论文章节译成规范、通顺的学术中文。保留公式、变量名、数字、引用标记（如 [12]、图 3、表 2）和专有名词，不增删信息，不写导语或解释。只输出译文正文。`;
+
+const SECTION_FR = `Vous êtes traducteur d’articles académiques. Traduisez la section fournie en français académique naturel. Conservez les formules, noms de variables, chiffres, appels de citation (par exemple [12], figure 3, tableau 2) et noms propres. N’ajoutez ni ne retirez aucune information, sans introduction ni commentaire. Renvoyez uniquement le texte traduit.`;
+
 function stripFences(text = '') {
   return String(text)
     .replace(/^\s*```[a-zA-Z]*\s*/m, '')
@@ -227,5 +231,59 @@ export function createTranslator({ ctx, config, cache }) {
     return { translations, cached: false, model: `${route.provider}/${route.model}` };
   }
 
-  return { available, translate, translateTitles, route: selection };
+  async function translateSection(heading, text, lang = 'zh') {
+    const llm = ctx.get('llm');
+    if (!llm) throw new Error('当前 profile 没有可用的模型服务，无法翻译。');
+    const route = selection();
+    if (!route) throw new Error('尚未选择翻译模型：请在插件配置里设置 llmProvider / llmModel。');
+    const target = lang === 'fr' ? 'fr' : 'zh';
+    const headingText = String(heading || '').trim().slice(0, 200);
+    const source = String(text || '').trim().slice(0, 8000);
+    if (!source) throw new Error('这一节没有可翻译的正文。');
+
+    const key = digest(`section\n${target}\n${route.provider}/${route.model}\n${headingText}\n${source}`);
+    const cached = cache.get(key);
+    if (cached?.text) return { ...cached, cached: true };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120000);
+    let output = '';
+    try {
+      const messages = [
+        { role: 'user', content: [{ type: 'text', text: `${headingText ? `SECTION: ${headingText}\n\n` : ''}${source}` }] },
+      ];
+      let callConfig = { provider: route.provider, model: route.model, maxTokens: 4000 };
+      let streamCall;
+      if (typeof llm.prepareCall === 'function') {
+        const prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens: 4000 }, controller.signal);
+        callConfig = prepared.config;
+        streamCall = (options) => prepared.stream(options);
+      } else {
+        streamCall = (options) => llm.stream(options);
+      }
+      const chunks = streamCall({
+        ...callConfig,
+        messages,
+        system: target === 'fr' ? SECTION_FR : SECTION_ZH,
+        signal: controller.signal,
+      });
+      for await (const chunk of chunks) {
+        if (chunk.type === 'text-delta') output += chunk.text;
+        if (chunk.type === 'finish') {
+          if (chunk.reason?.kind === 'error') throw new Error(chunk.reason.failure?.message || '模型调用失败。');
+          if (chunk.reason?.kind === 'aborted') throw new Error('翻译已取消。');
+        }
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const translated = stripFences(output).replace(/^#{1,3}\s*/, '').trim();
+    if (!translated) throw new Error('模型没有返回译文。');
+    const result = { text: translated, lang: target, at: Date.now() };
+    cache.set(key, result);
+    return { ...result, cached: false };
+  }
+
+  return { available, translate, translateTitles, translateSection, route: selection };
 }

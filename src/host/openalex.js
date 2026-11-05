@@ -16,6 +16,7 @@ const SELECT = [
   'open_access',
   'abstract_inverted_index',
   'type',
+  'locations',
 ].join(',');
 
 function abstractFromIndex(index) {
@@ -32,6 +33,17 @@ function abstractFromIndex(index) {
 
 function openAlexId(value = '') {
   return String(value).split('/').pop() || '';
+}
+
+function arxivIdFromLocations(work) {
+  for (const location of work.locations || []) {
+    for (const candidate of [location.landing_page_url, location.pdf_url]) {
+      if (!candidate || !/arxiv\.org/i.test(candidate)) continue;
+      const match = /arxiv\.org\/(?:abs|pdf)\/([^?#]+?)(?:\.pdf)?$/i.exec(candidate);
+      if (match) return match[1].replace(/v\d+$/, '');
+    }
+  }
+  return '';
 }
 
 export function normalizeWork(work) {
@@ -51,6 +63,7 @@ export function normalizeWork(work) {
     id: doi ? `doi:${doi.toLowerCase()}` : `openalex:${openAlexId(work.id)}`,
     source: 'openalex',
     kind: source?.type === 'conference' ? 'conference' : 'journal',
+    arxivId: arxivIdFromLocations(work),
     title: cleanText(work.title || work.display_name || ''),
     abstract: abstractFromIndex(work.abstract_inverted_index),
     authors,

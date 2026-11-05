@@ -385,6 +385,71 @@ export const CSS = `
 }
 .musee-icon-btn:hover { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); }
 
+.musee-reader { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--dsw-alias-bg-base); }
+.musee-reader-head {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 8px 16px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+.musee-reader-title { font-weight: 600; font-size: 14px; max-width: 44%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.musee-reader-body { flex: 1 1 auto; display: flex; min-height: 0; }
+.musee-reader-toc {
+  flex: 0 0 250px; width: 250px; overflow: auto; padding: 12px 8px 30px;
+  border-right: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+.musee-reader-toc-item {
+  display: block; width: 100%; text-align: left;
+  border: 0; background: transparent; color: var(--dsw-alias-label-secondary);
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 12.5px; line-height: 1.4;
+}
+.musee-reader-toc-item:hover { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); }
+.musee-reader-toc-item.active { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); font-weight: 600; }
+.musee-reader-toc-item.level-2 { padding-left: 20px; font-size: 12px; }
+.musee-reader-scroll { flex: 1 1 auto; min-width: 0; overflow: auto; }
+.musee-reader-paper { max-width: 860px; margin: 0 auto; padding: 26px 40px 100px; }
+.musee-reader-authors {
+  color: var(--dsw-alias-label-secondary); font-size: 12.5px; line-height: 1.7;
+  margin-bottom: 20px; max-height: 5em; overflow: hidden;
+}
+.musee-reader-translation {
+  border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;
+}
+.musee-reader-translation-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12.5px; }
+.musee-reader-translation-head .musee-back { margin-left: auto; }
+.musee-reader-translation-body { font-size: 14.5px; line-height: 1.9; white-space: pre-wrap; }
+
+.musee-fulltext { font-size: 15px; line-height: 1.85; }
+.musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }
+.musee-fulltext h3 { font-size: 18px; margin: 24px 0 10px; }
+.musee-fulltext h4, .musee-fulltext h5, .musee-fulltext h6 { font-size: 15px; margin: 18px 0 8px; }
+.musee-fulltext p { margin: 0 0 14px; }
+.musee-fulltext ul, .musee-fulltext ol { padding-left: 24px; margin: 0 0 14px; }
+.musee-fulltext li { margin: 4px 0; }
+.musee-fulltext figure { margin: 22px 0; }
+.musee-fulltext figcaption { font-size: 12.5px; line-height: 1.65; color: var(--dsw-alias-label-secondary); margin-top: 6px; }
+.musee-fulltext img { max-width: 100%; height: auto; border-radius: 6px; background: var(--dsw-alias-bg-layer-1); }
+.musee-fulltext table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; font-size: 12px; margin: 14px 0; }
+.musee-fulltext th, .musee-fulltext td { border: 1px solid var(--dsw-alias-border-l1); padding: 5px 7px; vertical-align: top; }
+.musee-fulltext math { font-size: 1.05em; }
+.musee-fulltext .ltx_equation, .musee-fulltext .ltx_eqn_table { display: block; overflow-x: auto; margin: 14px 0; }
+.musee-fulltext pre { overflow: auto; padding: 10px; background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }
+.musee-fulltext a { color: var(--dsw-alias-brand-primary); }
+.musee-fulltext .ltx_biblist { padding-left: 22px; }
+.musee-fulltext .ltx_bibitem { margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
+.musee-fulltext .ltx_note, .musee-fulltext .ltx_role_footnote { font-size: 12px; color: var(--dsw-alias-label-secondary); }
+.musee-fulltext .ltx_page_header, .musee-fulltext .ltx_page_footer, .musee-fulltext .ltx_TOC { display: none; }
+
+.musee-lightbox {
+  position: fixed; inset: 0; z-index: 95; padding: 30px;
+  background: rgba(0, 0, 0, .82);
+  display: flex; align-items: center; justify-content: center; cursor: zoom-out;
+}
+.musee-lightbox img { max-width: 96vw; max-height: 92vh; object-fit: contain; border-radius: 6px; }
+
 
 @media (max-width: 920px) {
   .musee-rail { display: none; }
@@ -393,6 +458,9 @@ export const CSS = `
   .musee-tagline { display: none; }
   .musee-search { width: 46%; }
   .musee-header { gap: 12px; }
+  .musee-reader-toc { display: none; }
+  .musee-reader-paper { padding: 20px 18px 80px; }
+  .musee-reader-title { max-width: 32%; }
 }
 @media (max-width: 640px) {
   .musee-search { width: 100%; margin-left: 0; }

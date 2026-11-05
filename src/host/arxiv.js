@@ -38,6 +38,8 @@ function parseEntry(xml) {
   return {
     id: `arxiv:${arxivId}`,
     source: 'arxiv',
+    kind: 'preprint',
+    arxivId,
     title: cleanText(tag(xml, 'title')),
     abstract: cleanText(tag(xml, 'summary')),
     authors,

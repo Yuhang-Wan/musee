@@ -5,6 +5,7 @@ import path from 'node:path';
 import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, VERSION, journalsFor } from './catalog.js';
 import { latestByCategory } from './arxiv.js';
 import { cite } from './cite.js';
+import { fetchArxivFulltext } from './fulltext.js';
 import { fetchSource, searchWorks, worksBySource, worksBySourcePage, yearCounts } from './openalex.js';
 import { createStore } from './store.js';
 import { createTranslator } from './translate.js';
@@ -69,6 +70,7 @@ export function createMusee(ctx, config = {}) {
   const dataDir = resolveDataDir(config);
   const cache = new TtlCache(10 * 60 * 1000, 160);
   const sourceCache = new TtlCache(24 * 60 * 60 * 1000, 64);
+  const fulltextCache = new TtlCache(30 * 60 * 1000, 16);
   const storePromise = createStore(dataDir);
 
   // The translator is created synchronously while the store loads asynchronously;
@@ -178,6 +180,24 @@ export function createMusee(ctx, config = {}) {
       if (!title && !abstract) return json({ error: '没有可翻译的内容。' }, 400);
       const result = await translator.translate({ title, abstract, lang });
       return json(result);
+    }
+
+    if (pathname === '/fulltext') {
+      const arxivId = (url.searchParams.get('arxivId') || '').trim().replace(/^arxiv:/i, '').replace(/v\d+$/, '');
+      if (!/^[A-Za-z0-9][A-Za-z0-9.\-/]{2,40}$/.test(arxivId) || arxivId.includes('..')) {
+        return json({ error: '无效的 arXiv 编号。' }, 400);
+      }
+      const data = await fulltextCache.wrap(`fulltext:${arxivId}`, () => fetchArxivFulltext(arxivId));
+      return json(data);
+    }
+
+    if (pathname === '/translate-section' && request.method === 'POST') {
+      const body = await request.json();
+      const heading = String(body.heading || '').slice(0, 200);
+      const text = String(body.text || '').slice(0, 30000);
+      const lang = body.lang === 'fr' ? 'fr' : 'zh';
+      if (!text.trim()) return json({ error: '这一节没有可翻译的正文。' }, 400);
+      return json(await translator.translateSection(heading, text, lang));
     }
 
     if (pathname === '/translate-titles' && request.method === 'POST') {

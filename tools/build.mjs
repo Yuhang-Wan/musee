@@ -29,7 +29,7 @@ const result = spawnSync(
     '--log-level=warning',
     `--outfile=${outfile}`,
   ],
-  { stdio: 'inherit' },
+  { stdio: 'inherit', env: { ...process.env, NODE_PATH: path.join(root, 'tools', 'node_modules') } },
 );
 
 if (result.error) {

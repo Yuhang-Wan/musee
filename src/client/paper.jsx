@@ -1,6 +1,6 @@
 import { Fragment, h, useEffect, useRef, useState } from './react.js';
 import { tFormat } from './api.js';
-import { Button, Empty, IconBack, IconBookmark, IconExternal, IconQuote, IconTranslate, Pill, Spinner } from './ui.jsx';
+import { Button, Empty, IconBack, IconBook, IconBookmark, IconExternal, IconQuote, IconTranslate, Pill, Spinner } from './ui.jsx';
 
 function tr(t, key, params) {
   return tFormat(t(key), params);
@@ -41,7 +41,7 @@ export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenu
   );
 }
 
-export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation }) {
+export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation, onRead }) {
   const [mode, setMode] = useState('both');
   const [note, setNote] = useState('');
   const [tags, setTags] = useState('');
@@ -158,6 +158,7 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
         translating ? h(Spinner) : h(IconTranslate),
         translating ? t('paper.translating') : t('paper.translate'),
       ),
+      paper.arxivId ? h(Button, { variant: 'primary', onClick: () => onRead(paper) }, h(IconBook), t('paper.fulltext')) : null,
       h(Button, { onClick: () => onCite([item || paper]) }, h(IconQuote), t('paper.cite')),
       paper.url
         ? h('a', { className: 'musee-btn', href: paper.url, target: '_blank', rel: 'noreferrer' }, h(IconExternal), t('paper.open'))

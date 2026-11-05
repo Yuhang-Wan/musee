@@ -61,6 +61,8 @@ export const api = {
   search: (query, limit = 20) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
   translate: (title, abstract, lang) => request('/translate', { method: 'POST', body: { title, abstract, lang } }),
   translateTitles: (titles, lang) => request('/translate-titles', { method: 'POST', body: { titles, lang } }),
+  translateSection: (heading, text, lang) => request('/translate-section', { method: 'POST', body: { heading, text, lang } }),
+  fulltext: (arxivId) => request(`/fulltext?arxivId=${encodeURIComponent(arxivId)}`),
   save: (paper) => request('/library', { method: 'POST', body: { action: 'save', paper } }),
   update: (id, patch) => request('/library', { method: 'POST', body: { action: 'update', id, patch } }),
   remove: (id) => request('/library', { method: 'POST', body: { action: 'remove', id } }),

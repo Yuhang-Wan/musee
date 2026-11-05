@@ -14,6 +14,7 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - **图文期刊卡片**：每本期刊有原创排版封面（随学科变色的书脊设计）、Musee 撰写的范围简介、ISSN 与收录量；详情页显示最新一卷/期。
 - **往期浏览**：期刊页可按年份筛选（带每年篇数）、显示总篇数与卷/期，底部「加载更多」逐页翻看历史论文。
 - **标题翻译**：论文列表自动把标题批量译成当前翻译语言，缓存在本地；设置里可一键关闭，关闭后不再调用模型。
+- **OA 全文阅读**：论文有 arXiv 版本时出现「全文阅读」；左侧章节目录，正文含图、表、公式与参考文献，点图可放大，正文引用可跳到对应文献，支持按章节做学术翻译。
 - **顶会论文**：NeurIPS、CVPR、ICCV、AAAI、IJCAI、ACL、EMNLP、KDD、ICRA、IROS、RSS，来自 OpenAlex 会议论文集。
 - **arXiv 预印本**：按 `cs.RO`、`cs.AI`、`quant-ph`、`hep-th`、`physics.soc-ph` 等分类看最新提交。
 - **学术翻译**：调用你已配置的模型，按“标题 + 摘要 + 学术语体 + 术语一致”的提示词翻译成中文或法语；结果按内容哈希缓存，重复阅读不重复计费。
@@ -78,6 +79,8 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - **期刊封面是 Musee 的原创排版设计**，不是出版商封面；出版商封面图有版权且没有稳定的授权 API，因此这里用按学科配色、由刊名缩写生成的封面替代。
 - **期刊简介是 Musee 撰写的范围说明**，不是出版商官方文案；官方描述可点“期刊官网”前往。
 - 顶会论文来自 OpenAlex 的会议论文集；ICML、ICLR、CoRL 等以 OpenReview 为主的会议收录不完整，后续会补其他数据源。
+- **全文来自 arXiv HTML**：正文、图片、表格和参考文献由 arXiv 页面解析，图片直接指向 arXiv 的公开地址；Musee 不转存、不再分发这些内容。没有 HTML 全文的论文会给出 PDF 链接。
+- 渲染前会在浏览器端用白名单清洗 HTML（移除脚本、样式与表单），只保留正文、图表、公式和链接。
 - 引用格式由程序生成，投稿前请按目标期刊要求核对。
 
 ## 工作方式
@@ -130,10 +133,10 @@ cordis.patch.yml      插件清单
 
 ## 路线图
 
-- **v0.2 图文与顶会（当前）**：期刊封面与简介、三语界面、顶会论文集。
-- **v0.3 全文阅读**：arXiv HTML/PDF、PMC JATS，段落级双语对照与高亮锚定。
-- **v0.4 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
-- **v0.5 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
+- **v0.3 全文阅读（当前）**：arXiv HTML 章节、图表、公式、参考文献与按章节翻译。
+- **v0.4 深读与批注**：段落级高亮/批注、PMC JATS 适配、阅读进度与章节笔记。
+- **v0.5 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
+- **v0.6 智能阅读**：Agent 工具（`musee_search` / `musee_note`）、论文问答、观点卡片与综述草稿。
 - **v1.0 全学科**：可导入的期刊目录、更多数据源、npm 发布与完整文档。
 
 欢迎在 Issues 里补充你所在领域的期刊清单和使用场景。
@@ -141,3 +144,5 @@ cordis.patch.yml      插件清单
 ## License
 
 [MIT](LICENSE) © 2026 Yuhang Wan
+
+Bundled third-party code and its licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
