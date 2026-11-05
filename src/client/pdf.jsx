@@ -1,4 +1,3 @@
-import { GlobalWorkerOptions, TextLayer, getDocument } from 'pdfjs-dist';
 import { h, useEffect, useRef, useState } from './react.js';
 import { api, tFormat } from './api.js';
 import { Button, ErrorBanner, IconBack, Loading, Modal, Spinner } from './ui.jsx';
@@ -37,6 +36,7 @@ export function PdfViewer({ paper, item, t, targetLang, onBack, onEnsureSaved, o
   const canvasRef = useRef(null);
   const textRef = useRef(null);
   const docRef = useRef(null);
+  const libRef = useRef(null);
   const renderRef = useRef(null);
 
   useEffect(() => {
@@ -45,9 +45,15 @@ export function PdfViewer({ paper, item, t, targetLang, onBack, onEnsureSaved, o
     setError('');
     setPdf(null);
     (async () => {
-      const [url, workerUrl] = await Promise.all([api.pdfUrl(paper.arxivId), api.pdfWorkerUrl()]);
-      GlobalWorkerOptions.workerSrc = workerUrl;
-      const task = getDocument({ url, disableRange: true, disableStream: true, isEvalSupported: false });
+      const [url, workerUrl, libUrl] = await Promise.all([
+        api.pdfUrl(paper.arxivId),
+        api.pdfWorkerUrl(),
+        api.pdfLibUrl(),
+      ]);
+      const pdfjs = await import(libUrl);
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+      libRef.current = pdfjs;
+      const task = pdfjs.getDocument({ url, disableRange: true, disableStream: true, isEvalSupported: false });
       const doc = await task.promise;
       if (!alive) {
         doc.destroy();
@@ -97,6 +103,8 @@ export function PdfViewer({ paper, item, t, targetLang, onBack, onEnsureSaved, o
       const canvas = canvasRef.current;
       const textContainer = textRef.current;
       if (!canvas || !textContainer) return;
+      const TextLayer = libRef.current?.TextLayer;
+      if (!TextLayer) return;
       setPageSize({ w: viewport.width, h: viewport.height });
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(viewport.width * dpr);

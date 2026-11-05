@@ -18,6 +18,10 @@ await fs.copyFile(
   path.join(root, 'tools', 'node_modules', 'pdfjs-dist', 'build', 'pdf.worker.min.mjs'),
   path.join(assetsDir, 'pdf.worker.min.mjs'),
 );
+await fs.copyFile(
+  path.join(root, 'tools', 'node_modules', 'pdfjs-dist', 'build', 'pdf.min.mjs'),
+  path.join(assetsDir, 'pdf.min.mjs'),
+);
 
 const result = spawnSync(
   binary,

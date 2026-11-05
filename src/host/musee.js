@@ -101,10 +101,12 @@ export function createMusee(ctx, config = {}) {
   const translator = createTranslator({ ctx, config, cache: translationCache });
   const mailto = String(config.mailto || '').trim();
   let pdfWorker = null;
+  let pdfLib = null;
   try {
     pdfWorker = readFileSync(new URL('../../assets/pdf.worker.min.mjs', import.meta.url));
+    pdfLib = readFileSync(new URL('../../assets/pdf.min.mjs', import.meta.url));
   } catch (error) {
-    console.warn('[musee] PDF worker asset is missing:', error?.message || error);
+    console.warn('[musee] PDF assets are missing:', error?.message || error);
   }
 
   storePromise
@@ -274,6 +276,16 @@ export function createMusee(ctx, config = {}) {
       });
     }
 
+    if (pathname === '/pdf-lib') {
+      if (!pdfLib) return json({ error: 'PDF 引擎资源缺失。' }, 503);
+      return new Response(pdfLib, {
+        headers: {
+          'content-type': 'text/javascript; charset=utf-8',
+          'cache-control': 'public, max-age=3600',
+        },
+      });
+    }
+
     if (pathname === '/pdf') {
       const arxivId = (url.searchParams.get('arxivId') || '').trim().replace(/^arxiv:/i, '').replace(/v\d+$/, '');
       if (!/^[A-Za-z0-9][A-Za-z0-9.\-/]{2,40}$/.test(arxivId) || arxivId.includes('..')) {
@@ -351,7 +363,7 @@ export function createMusee(ctx, config = {}) {
 
     const supplied =
       request.headers.get('x-musee-token') ||
-      (['/musee/api/pdf', '/musee/api/pdf-worker'].includes(url.pathname)
+      (['/musee/api/pdf', '/musee/api/pdf-worker', '/musee/api/pdf-lib'].includes(url.pathname)
         ? url.searchParams.get('token') || ''
         : '');
     if (supplied !== token) {
