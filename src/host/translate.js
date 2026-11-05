@@ -86,6 +86,11 @@ export function createTranslator({ ctx, config, cache }) {
   function selection() {
     if (provider && model) return { provider, model };
     const fallback = ctx.get('agentDefaultModel')?.currentSelection?.();
+    if (fallback?.provider === 'deepseek-official') {
+      // The official route needs DEEPSEEK_API_KEY; the signed-in account route
+      // is already credentialed in this profile and uses the same model ids.
+      return { provider: 'deepseek-account', model: fallback.model || 'deepseek-flash' };
+    }
     if (fallback?.provider && fallback?.model) return { provider: fallback.provider, model: fallback.model };
     return null;
   }

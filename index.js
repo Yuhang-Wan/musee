@@ -1,6 +1,12 @@
 import { createMusee } from './src/host/musee.js';
 
 /**
+ * The API routes and the page token both ride the Host web server; activation
+ * must wait for it instead of racing the boot order.
+ */
+export const inject = ['webServer'];
+
+/**
  * Host half of the Musee bundle.
  *
  * It owns the data sources, the academic translator, the citation formatter,
@@ -9,7 +15,7 @@ import { createMusee } from './src/host/musee.js';
  * page head as a meta tag.
  */
 export function apply(ctx, config = {}) {
-  const webServer = ctx.get('webServer');
+  const webServer = ctx.webServer;
   if (!webServer) {
     console.warn('[musee] webServer is unavailable; the reading desk will not start.');
     return;
