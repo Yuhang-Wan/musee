@@ -912,9 +912,8 @@ window.__ModuleLoader__.load({
               translating ? t("paper.translating") : t("paper.translate")
             ),
             paper.arxivId ? h(Button, { variant: "primary", onClick: () => onRead(paper) }, h(IconBook), t("paper.fulltext")) : null,
-            paper.arxivId ? h(Button, { onClick: () => onPdf(paper) }, t("paper.pdf")) : null,
             h(Button, { onClick: () => onCite([item || paper]) }, h(IconQuote), t("paper.cite")),
-            paper.url ? h("a", { className: "musee-btn", href: paper.url, target: "_blank", rel: "noreferrer" }, h(IconExternal), t("paper.open")) : null
+            paper.arxivId ? h(Button, { onClick: () => onPdf(paper) }, h(IconExternal), t("paper.pdf")) : paper.url ? h("a", { className: "musee-btn", href: paper.url, target: "_blank", rel: "noreferrer" }, h(IconExternal), t("paper.open")) : null
           ),
           h(
             "div",
