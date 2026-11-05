@@ -133,7 +133,7 @@ export function createMusee(ctx, config = {}) {
       const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
       const [papers, source] = await Promise.all([
         cache.wrap(`journal:${journalId}:${limit}:${offset}`, () => worksBySource(journal.openalex, { limit, offset, mailto })),
-        sourceCache.wrap(`source:${journal.openalex}`, () => fetchSource(journal.openalex, { mailto })),
+        sourceCache.wrap(`source:${journal.openalex}`, () => fetchSource(journal.openalex, { mailto })).catch(() => null),
       ]);
       return json({ journal, source, papers });
     }
