@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Musee">
+  <rect width="64" height="64" rx="14" fill="#1d4ed8"/>
+  <path d="M14 18a5 5 0 0 1 5-5h12v35H19a5 5 0 0 1-5-5z" fill="#f8fafc"/>
+  <path d="M50 18a5 5 0 0 0-5-5H33v35h12a5 5 0 0 0 5-5z" fill="#dbeafe"/>
+  <path d="M32 13v35" stroke="#1d4ed8" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M40 13v13l-3.4-2.8L33 26V13" fill="#1d4ed8"/>
+</svg>

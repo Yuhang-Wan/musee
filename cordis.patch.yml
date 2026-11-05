@@ -1,0 +1,8 @@
+- insert:
+    - id: musee
+      name: dsh-musee
+      config:
+        dataDir: ''
+        mailto: ''
+        llmProvider: ''
+        llmModel: ''
