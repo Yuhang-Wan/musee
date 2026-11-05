@@ -190,7 +190,7 @@ window.__ModuleLoader__.load({
     .musee-section-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
     .musee-section-head span { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 
-    .musee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(252px, 1fr)); gap: 10px; }
+    .musee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
     .musee-journal {
       text-align: left;
       border: 1px solid var(--dsw-alias-border-l1);
@@ -631,7 +631,7 @@ window.__ModuleLoader__.load({
         if (authors.length <= 3) return authors.join(", ");
         return `${authors.slice(0, 3).join(", ")} 等`;
       }
-      function PaperList({ papers, onOpen, libraryById, t, emptyTitle }) {
+      function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenue = false }) {
         if (!papers.length) return h(Empty, { title: emptyTitle || t("empty") });
         return h(
           "div",
@@ -646,7 +646,7 @@ window.__ModuleLoader__.load({
                 "div",
                 { className: "musee-paper-meta" },
                 paper.kind === "conference" ? h(Pill, { tone: "brand" }, t("paper.conference")) : null,
-                paper.journal?.name ? h("span", null, paper.journal.name) : paper.source === "arxiv" ? h(Pill, { tone: "brand" }, "arXiv") : null,
+                !hideVenue && paper.journal?.name ? h("span", null, paper.journal.name) : paper.source === "arxiv" ? h(Pill, { tone: "brand" }, "arXiv") : null,
                 paper.year ? h("span", null, String(paper.year)) : null,
                 paper.authors?.length ? h("span", null, shortAuthors(paper.authors)) : null,
                 paper.openAccess ? h(Pill, { tone: "success" }, t("paper.oa")) : null,
@@ -1734,7 +1734,7 @@ window.__ModuleLoader__.load({
         const renderList = () => {
           if (listState === "loading") return h(Loading, { label: t("loading") });
           if (listState === "error") return h(ErrorBanner, { message: listError, onRetry: listRetryRef.current, retryLabel: t("error.retry") });
-          return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t("empty") });
+          return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t("empty"), hideVenue: view.kind === "conference" });
         };
         const renderVenueHead = (venue, kind, options = {}) => {
           const local = localizedName(venue, lang);
@@ -1901,7 +1901,7 @@ window.__ModuleLoader__.load({
               "div",
               { className: "musee-page" },
               h("button", { type: "button", className: "musee-back", onClick: goDiscover }, h(IconBack), t("discover.conferences")),
-              renderVenueHead(view.conference, "conference", {}),
+              renderVenueHead(view.conference, "conference", { issue: papers[0]?.year ? String(papers[0].year) : "" }),
               h("p", { className: "musee-settings-hint", style: { marginTop: "12px", maxWidth: "720px" } }, t("conference.dataNote")),
               h("div", { className: "musee-section-head", style: { marginTop: "20px" } }, h("h2", null, t("conference.latest"))),
               renderList()

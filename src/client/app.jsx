@@ -212,7 +212,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
   const renderList = () => {
     if (listState === 'loading') return h(Loading, { label: t('loading') });
     if (listState === 'error') return h(ErrorBanner, { message: listError, onRetry: listRetryRef.current, retryLabel: t('error.retry') });
-    return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t('empty') });
+    return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t('empty'), hideVenue: view.kind === 'conference' });
   };
 
   const renderVenueHead = (venue, kind, options = {}) => {
@@ -389,7 +389,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
         'div',
         { className: 'musee-page' },
         h('button', { type: 'button', className: 'musee-back', onClick: goDiscover }, h(IconBack), t('discover.conferences')),
-        renderVenueHead(view.conference, 'conference', {}),
+        renderVenueHead(view.conference, 'conference', { issue: papers[0]?.year ? String(papers[0].year) : '' }),
         h('p', { className: 'musee-settings-hint', style: { marginTop: '12px', maxWidth: '720px' } }, t('conference.dataNote')),
         h('div', { className: 'musee-section-head', style: { marginTop: '20px' } }, h('h2', null, t('conference.latest'))),
         renderList(),

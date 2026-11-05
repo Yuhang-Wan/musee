@@ -11,7 +11,7 @@ function shortAuthors(authors = []) {
   return `${authors.slice(0, 3).join(', ')} 等`;
 }
 
-export function PaperList({ papers, onOpen, libraryById, t, emptyTitle }) {
+export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenue = false }) {
   if (!papers.length) return h(Empty, { title: emptyTitle || t('empty') });
   return h(
     'div',
@@ -26,7 +26,7 @@ export function PaperList({ papers, onOpen, libraryById, t, emptyTitle }) {
           'div',
           { className: 'musee-paper-meta' },
           paper.kind === 'conference' ? h(Pill, { tone: 'brand' }, t('paper.conference')) : null,
-          paper.journal?.name ? h('span', null, paper.journal.name) : paper.source === 'arxiv' ? h(Pill, { tone: 'brand' }, 'arXiv') : null,
+          !hideVenue && paper.journal?.name ? h('span', null, paper.journal.name) : paper.source === 'arxiv' ? h(Pill, { tone: 'brand' }, 'arXiv') : null,
           paper.year ? h('span', null, String(paper.year)) : null,
           paper.authors?.length ? h('span', null, shortAuthors(paper.authors)) : null,
           paper.openAccess ? h(Pill, { tone: 'success' }, t('paper.oa')) : null,

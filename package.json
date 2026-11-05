@@ -1,6 +1,6 @@
 {
   "name": "dsh-musee",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Musee — read journals and preprints inside DeepSeek Harness, with academic translation, citations, and reading notes.",
   "license": "MIT",
   "repository": {

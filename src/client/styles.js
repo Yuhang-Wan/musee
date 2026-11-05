@@ -95,7 +95,7 @@ export const CSS = `
 .musee-section-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
 .musee-section-head span { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 
-.musee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(252px, 1fr)); gap: 10px; }
+.musee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
 .musee-journal {
   text-align: left;
   border: 1px solid var(--dsw-alias-border-l1);
