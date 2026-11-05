@@ -21,6 +21,23 @@ function tr(t, key, params) {
   return tFormat(t(key), params);
 }
 
+function splitChunks(text, max = 6000) {
+  const value = String(text || '').trim();
+  if (value.length <= max) return value ? [value] : [];
+  const chunks = [];
+  let rest = value;
+  while (rest.length > max) {
+    let cut = rest.lastIndexOf('\n\n', max);
+    if (cut < max * 0.5) cut = rest.lastIndexOf('. ', max);
+    if (cut < max * 0.5) cut = rest.lastIndexOf(' ', max);
+    if (cut < 1) cut = max;
+    chunks.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) chunks.push(rest);
+  return chunks;
+}
+
 export function Reader({ paper, t, targetLang, onBack, onPdf }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +46,12 @@ export function Reader({ paper, t, targetLang, onBack, onPdf }) {
   const [translation, setTranslation] = useState(null);
   const [translating, setTranslating] = useState(false);
   const [lightbox, setLightbox] = useState('');
+  const [viewMode, setViewMode] = useState('original');
+  const [fullTranslations, setFullTranslations] = useState({});
+  const [fullProgress, setFullProgress] = useState({ done: 0, total: 0, active: false });
+  const [fullError, setFullError] = useState('');
   const articleRef = useRef(null);
+  const stopFullRef = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -37,6 +59,11 @@ export function Reader({ paper, t, targetLang, onBack, onPdf }) {
     setError('');
     setData(null);
     setTranslation(null);
+    setViewMode('original');
+    setFullTranslations({});
+    setFullProgress({ done: 0, total: 0, active: false });
+    setFullError('');
+    stopFullRef.current = false;
     api
       .fulltext(paper.arxivId)
       .then((result) => {
@@ -79,6 +106,47 @@ export function Reader({ paper, t, targetLang, onBack, onPdf }) {
     return parent ? sectionMap.get(parent) || null : null;
   })();
 
+  useEffect(() => {
+    setFullTranslations({});
+    setViewMode('original');
+  }, [targetLang]);
+
+  const translateAll = async () => {
+    const sections = (data?.sections || []).filter((section) => section.text);
+    if (!sections.length) return;
+    stopFullRef.current = false;
+    setFullError('');
+    setViewMode('translated');
+    setFullProgress({ done: 0, total: sections.length, active: true });
+    const results = { ...fullTranslations };
+    try {
+      for (let index = 0; index < sections.length; index += 1) {
+        if (stopFullRef.current) break;
+        const section = sections[index];
+        if (!results[section.id]) {
+          const parts = [];
+          for (const chunk of splitChunks(section.text)) {
+            if (stopFullRef.current) break;
+            const result = await api.translateSection(section.title, chunk, targetLang);
+            parts.push(result.text);
+          }
+          if (!parts.length) break;
+          results[section.id] = parts.join('\n\n');
+          setFullTranslations({ ...results });
+        }
+        setFullProgress({ done: index + 1, total: sections.length, active: true });
+      }
+    } catch (reason) {
+      setFullError(tr(t, 'reader.translateAllError', { message: reason.message || String(reason) }));
+    } finally {
+      setFullProgress((current) => ({ ...current, active: false }));
+    }
+  };
+
+  const stopFull = () => {
+    stopFullRef.current = true;
+  };
+
   const translateSection = async () => {
     if (!activeSection?.text) {
       setTranslation({ id: active, error: t('reader.noText') });
@@ -118,10 +186,42 @@ export function Reader({ paper, t, targetLang, onBack, onPdf }) {
     h('div', { style: { flex: 1 } }),
     data?.available
       ? h(
-          Button,
-          { size: 'sm', onClick: translateSection, disabled: translating || !activeSection?.text },
-          translating ? h(Spinner) : null,
-          translating ? t('reader.translating') : t('reader.translate'),
+          'div',
+          { className: 'musee-reader-actions' },
+          Object.keys(fullTranslations).length || viewMode === 'translated'
+            ? h(
+                'div',
+                { className: 'musee-seg musee-reader-view' },
+                h(
+                  'button',
+                  { type: 'button', className: viewMode === 'original' ? 'active' : '', onClick: () => setViewMode('original') },
+                  t('reader.originalView'),
+                ),
+                h(
+                  'button',
+                  { type: 'button', className: viewMode === 'translated' ? 'active' : '', onClick: () => setViewMode('translated') },
+                  t('reader.translatedView'),
+                ),
+              )
+            : null,
+          fullProgress.active
+            ? h(
+                Button,
+                { size: 'sm', onClick: stopFull },
+                h(Spinner),
+                tr(t, 'reader.translatingAll', { done: fullProgress.done, total: fullProgress.total }),
+              )
+            : h(
+                Button,
+                { size: 'sm', onClick: translateAll, disabled: translating || !(data.sections || []).length },
+                t('reader.translateAll'),
+              ),
+          h(
+            Button,
+            { size: 'sm', onClick: translateSection, disabled: translating || !activeSection?.text },
+            translating ? h(Spinner) : null,
+            translating ? t('reader.translating') : t('reader.translate'),
+          ),
         )
       : null,
     data?.absUrl ? h('a', { className: 'musee-btn sm', href: data.absUrl, target: '_blank', rel: 'noreferrer' }, 'arXiv') : null,
@@ -197,6 +297,7 @@ export function Reader({ paper, t, targetLang, onBack, onPdf }) {
           'div',
           { className: 'musee-reader-paper' },
           data.authors ? h('div', { className: 'musee-reader-authors' }, data.authors) : null,
+          fullError ? h(ErrorBanner, { message: fullError }) : null,
           translation
             ? h(
                 'div',
@@ -212,12 +313,31 @@ export function Reader({ paper, t, targetLang, onBack, onPdf }) {
                   : h('div', { className: 'musee-reader-translation-body' }, translation.text),
               )
             : null,
-          h('div', {
-            className: 'musee-fulltext',
-            ref: articleRef,
-            onClick: onArticleClick,
-            dangerouslySetInnerHTML: { __html: sanitized },
-          }),
+          viewMode === 'translated'
+            ? h(
+                'div',
+                { className: 'musee-fulltext musee-reader-translated', ref: articleRef },
+                h('p', { className: 'musee-reader-note' }, t('reader.translationNote')),
+                (data.sections || []).map((section) =>
+                  h(
+                    'section',
+                    { key: section.id, id: section.id, className: 'musee-translated-section' },
+                    h('h2', null, section.title),
+                    fullTranslations[section.id]
+                      ? fullTranslations[section.id]
+                          .split(/\n{2,}/)
+                          .map((paragraph, index) => h('p', { key: index }, paragraph))
+                      : h('p', { className: 'musee-reader-placeholder' }, fullProgress.active ? t('loading') : t('reader.translateAll')),
+                  ),
+                ),
+                h('p', { className: 'musee-reader-note' }, t('reader.referencesOriginal')),
+              )
+            : h('div', {
+                className: 'musee-fulltext',
+                ref: articleRef,
+                onClick: onArticleClick,
+                dangerouslySetInnerHTML: { __html: sanitized },
+              }),
         ),
       ),
     ),

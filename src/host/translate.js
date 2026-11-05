@@ -32,9 +32,9 @@ const TITLES_ZH = `Translate the following JSON array of academic paper titles i
 
 const TITLES_FR = `Traduisez le tableau JSON suivant de titres d’articles académiques en français. Conservez les noms d’auteurs, acronymes, noms de modèles et de jeux de données, chiffres et termes techniques. N’expliquez pas et n’ajoutez aucune note. Renvoyez uniquement un tableau JSON de chaînes traduites dans le même ordre, par exemple ["traduction 1","traduction 2"]. Sans balises Markdown ni autre texte.`;
 
-const SECTION_ZH = `你是学术论文译者。把用户给出的论文章节译成规范、通顺的学术中文。保留公式、变量名、数字、引用标记（如 [12]、图 3、表 2）和专有名词，不增删信息，不写导语或解释。只输出译文正文。`;
+const SECTION_ZH = `你是学术论文译者。把用户给出的论文章节正文译成规范、通顺的学术中文。用户可能先给一行“SECTION: 节标题”，它只用于理解上下文，不要翻译、不要重复标题，也不要在译文开头加任何标题。保留公式、变量名、数字、引用标记（如 [12]、图 3、表 2）和专有名词，不增删信息，不写导语或解释。只输出正文译文。`;
 
-const SECTION_FR = `Vous êtes traducteur d’articles académiques. Traduisez la section fournie en français académique naturel. Conservez les formules, noms de variables, chiffres, appels de citation (par exemple [12], figure 3, tableau 2) et noms propres. N’ajoutez ni ne retirez aucune information, sans introduction ni commentaire. Renvoyez uniquement le texte traduit.`;
+const SECTION_FR = `Vous êtes traducteur d’articles académiques. Traduisez le corps de section fourni en français académique naturel. Une ligne « SECTION: titre » peut précéder le texte : elle sert uniquement de contexte, ne la traduisez pas, ne la répétez pas et n’ajoutez aucun titre au début. Conservez les formules, noms de variables, chiffres, appels de citation (par exemple [12], figure 3, tableau 2) et noms propres. N’ajoutez ni ne retirez aucune information, sans introduction ni commentaire. Renvoyez uniquement le texte traduit.`;
 
 function stripFences(text = '') {
   return String(text)
@@ -246,7 +246,7 @@ export function createTranslator({ ctx, config, cache }) {
     const source = String(text || '').trim().slice(0, 8000);
     if (!source) throw new Error('这一节没有可翻译的正文。');
 
-    const key = digest(`section\n${target}\n${route.provider}/${route.model}\n${headingText}\n${source}`);
+    const key = digest(`section-v2\n${target}\n${route.provider}/${route.model}\n${headingText}\n${source}`);
     const cached = cache.get(key);
     if (cached?.text) return { ...cached, cached: true };
 

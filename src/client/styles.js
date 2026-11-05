@@ -437,6 +437,12 @@ export const CSS = `
 .musee-reader-translation-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12.5px; }
 .musee-reader-translation-head .musee-back { margin-left: auto; }
 .musee-reader-translation-body { font-size: 14.5px; line-height: 1.9; white-space: pre-wrap; }
+.musee-reader-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.musee-reader-view button { font-size: 11px; padding: 4px 9px; }
+.musee-reader-note { margin: 0 0 14px; color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.6; }
+.musee-translated-section { margin: 0 0 28px; }
+.musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
+.musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 
 .musee-fulltext { font-size: 15px; line-height: 1.85; }
 .musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }

@@ -555,6 +555,12 @@ window.__ModuleLoader__.load({
     .musee-reader-translation-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12.5px; }
     .musee-reader-translation-head .musee-back { margin-left: auto; }
     .musee-reader-translation-body { font-size: 14.5px; line-height: 1.9; white-space: pre-wrap; }
+    .musee-reader-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .musee-reader-view button { font-size: 11px; padding: 4px 9px; }
+    .musee-reader-note { margin: 0 0 14px; color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.6; }
+    .musee-translated-section { margin: 0 0 28px; }
+    .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
+    .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 
     .musee-fulltext { font-size: 15px; line-height: 1.85; }
     .musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }
@@ -1515,6 +1521,14 @@ window.__ModuleLoader__.load({
         "reader.close": "Close",
         "reader.noText": "This section has no translatable text. Pick a top-level section.",
         "reader.error": "Failed to load the full text: {message}",
+        "reader.translateAll": "Translate full text",
+        "reader.translatingAll": "Translating {done}/{total}…",
+        "reader.stop": "Stop",
+        "reader.originalView": "Original",
+        "reader.translatedView": "Translation",
+        "reader.translationNote": "Machine translation of the full text. Figures, tables, and equations stay in the original view.",
+        "reader.referencesOriginal": "References stay in the original view.",
+        "reader.translateAllError": "Full-text translation stopped: {message}",
         "paper.notes": "Reading notes",
         "paper.notesHint": "Save the paper to keep notes, status, and tags.",
         "paper.status": "Status",
@@ -1697,6 +1711,14 @@ window.__ModuleLoader__.load({
         "reader.close": "关闭",
         "reader.noText": "这一节没有可翻译的正文，请选择一级章节。",
         "reader.error": "全文加载失败：{message}",
+        "reader.translateAll": "翻译全文",
+        "reader.translatingAll": "正在翻译 {done}/{total}…",
+        "reader.stop": "停止",
+        "reader.originalView": "原文",
+        "reader.translatedView": "译文",
+        "reader.translationNote": "全文机器翻译；图、表、公式仍保留在原文视图。",
+        "reader.referencesOriginal": "参考文献保留在原文视图。",
+        "reader.translateAllError": "全文翻译中断：{message}",
         "paper.notes": "阅读笔记",
         "paper.notesHint": "收藏后可以记笔记、标状态、加标签。",
         "paper.status": "状态",
@@ -1879,6 +1901,14 @@ window.__ModuleLoader__.load({
         "reader.close": "Fermer",
         "reader.noText": "Cette section n’a pas de texte traduisible. Choisissez une section principale.",
         "reader.error": "Échec du chargement du texte intégral : {message}",
+        "reader.translateAll": "Traduire tout le texte",
+        "reader.translatingAll": "Traduction {done}/{total}…",
+        "reader.stop": "Arrêter",
+        "reader.originalView": "Original",
+        "reader.translatedView": "Traduction",
+        "reader.translationNote": "Traduction automatique du texte intégral. Les figures, tableaux et équations restent dans la vue originale.",
+        "reader.referencesOriginal": "Les références restent dans la vue originale.",
+        "reader.translateAllError": "Traduction interrompue : {message}",
         "paper.notes": "Notes de lecture",
         "paper.notesHint": "Enregistrez l’article pour garder notes, statut et étiquettes.",
         "paper.status": "Statut",
@@ -4166,6 +4196,22 @@ window.__ModuleLoader__.load({
       function tr2(t, key, params) {
         return tFormat(t(key), params);
       }
+      function splitChunks(text2, max = 6e3) {
+        const value = String(text2 || "").trim();
+        if (value.length <= max) return value ? [value] : [];
+        const chunks = [];
+        let rest = value;
+        while (rest.length > max) {
+          let cut = rest.lastIndexOf("\n\n", max);
+          if (cut < max * 0.5) cut = rest.lastIndexOf(". ", max);
+          if (cut < max * 0.5) cut = rest.lastIndexOf(" ", max);
+          if (cut < 1) cut = max;
+          chunks.push(rest.slice(0, cut).trim());
+          rest = rest.slice(cut).trim();
+        }
+        if (rest) chunks.push(rest);
+        return chunks;
+      }
       function Reader({ paper, t, targetLang, onBack, onPdf }) {
         const [data, setData] = useState(null);
         const [loading, setLoading] = useState(true);
@@ -4174,13 +4220,23 @@ window.__ModuleLoader__.load({
         const [translation, setTranslation] = useState(null);
         const [translating, setTranslating] = useState(false);
         const [lightbox, setLightbox] = useState("");
+        const [viewMode, setViewMode] = useState("original");
+        const [fullTranslations, setFullTranslations] = useState({});
+        const [fullProgress, setFullProgress] = useState({ done: 0, total: 0, active: false });
+        const [fullError, setFullError] = useState("");
         const articleRef = useRef(null);
+        const stopFullRef = useRef(false);
         useEffect(() => {
           let alive = true;
           setLoading(true);
           setError("");
           setData(null);
           setTranslation(null);
+          setViewMode("original");
+          setFullTranslations({});
+          setFullProgress({ done: 0, total: 0, active: false });
+          setFullError("");
+          stopFullRef.current = false;
           api.fulltext(paper.arxivId).then((result) => {
             if (!alive) return;
             setData(result);
@@ -4214,6 +4270,44 @@ window.__ModuleLoader__.load({
           const parent = active.includes(".") ? active.slice(0, active.lastIndexOf(".")) : "";
           return parent ? sectionMap.get(parent) || null : null;
         })();
+        useEffect(() => {
+          setFullTranslations({});
+          setViewMode("original");
+        }, [targetLang]);
+        const translateAll = async () => {
+          const sections = (data?.sections || []).filter((section) => section.text);
+          if (!sections.length) return;
+          stopFullRef.current = false;
+          setFullError("");
+          setViewMode("translated");
+          setFullProgress({ done: 0, total: sections.length, active: true });
+          const results = { ...fullTranslations };
+          try {
+            for (let index = 0; index < sections.length; index += 1) {
+              if (stopFullRef.current) break;
+              const section = sections[index];
+              if (!results[section.id]) {
+                const parts = [];
+                for (const chunk of splitChunks(section.text)) {
+                  if (stopFullRef.current) break;
+                  const result = await api.translateSection(section.title, chunk, targetLang);
+                  parts.push(result.text);
+                }
+                if (!parts.length) break;
+                results[section.id] = parts.join("\n\n");
+                setFullTranslations({ ...results });
+              }
+              setFullProgress({ done: index + 1, total: sections.length, active: true });
+            }
+          } catch (reason) {
+            setFullError(tr2(t, "reader.translateAllError", { message: reason.message || String(reason) }));
+          } finally {
+            setFullProgress((current) => ({ ...current, active: false }));
+          }
+        };
+        const stopFull = () => {
+          stopFullRef.current = true;
+        };
         const translateSection = async () => {
           if (!activeSection?.text) {
             setTranslation({ id: active, error: t("reader.noText") });
@@ -4250,10 +4344,38 @@ window.__ModuleLoader__.load({
           h("div", { className: "musee-reader-title" }, data?.title || paper.title),
           h("div", { style: { flex: 1 } }),
           data?.available ? h(
-            Button,
-            { size: "sm", onClick: translateSection, disabled: translating || !activeSection?.text },
-            translating ? h(Spinner) : null,
-            translating ? t("reader.translating") : t("reader.translate")
+            "div",
+            { className: "musee-reader-actions" },
+            Object.keys(fullTranslations).length || viewMode === "translated" ? h(
+              "div",
+              { className: "musee-seg musee-reader-view" },
+              h(
+                "button",
+                { type: "button", className: viewMode === "original" ? "active" : "", onClick: () => setViewMode("original") },
+                t("reader.originalView")
+              ),
+              h(
+                "button",
+                { type: "button", className: viewMode === "translated" ? "active" : "", onClick: () => setViewMode("translated") },
+                t("reader.translatedView")
+              )
+            ) : null,
+            fullProgress.active ? h(
+              Button,
+              { size: "sm", onClick: stopFull },
+              h(Spinner),
+              tr2(t, "reader.translatingAll", { done: fullProgress.done, total: fullProgress.total })
+            ) : h(
+              Button,
+              { size: "sm", onClick: translateAll, disabled: translating || !(data.sections || []).length },
+              t("reader.translateAll")
+            ),
+            h(
+              Button,
+              { size: "sm", onClick: translateSection, disabled: translating || !activeSection?.text },
+              translating ? h(Spinner) : null,
+              translating ? t("reader.translating") : t("reader.translate")
+            )
           ) : null,
           data?.absUrl ? h("a", { className: "musee-btn sm", href: data.absUrl, target: "_blank", rel: "noreferrer" }, "arXiv") : null,
           data?.pdfUrl ? onPdf ? h(Button, { size: "sm", onClick: onPdf }, "PDF") : h("a", { className: "musee-btn sm", href: data.pdfUrl, target: "_blank", rel: "noreferrer" }, h(IconExternal), "PDF") : null
@@ -4318,6 +4440,7 @@ window.__ModuleLoader__.load({
                 "div",
                 { className: "musee-reader-paper" },
                 data.authors ? h("div", { className: "musee-reader-authors" }, data.authors) : null,
+                fullError ? h(ErrorBanner, { message: fullError }) : null,
                 translation ? h(
                   "div",
                   { className: "musee-reader-translation" },
@@ -4329,7 +4452,20 @@ window.__ModuleLoader__.load({
                   ),
                   translation.error ? h("div", { className: "musee-error" }, translation.error) : h("div", { className: "musee-reader-translation-body" }, translation.text)
                 ) : null,
-                h("div", {
+                viewMode === "translated" ? h(
+                  "div",
+                  { className: "musee-fulltext musee-reader-translated", ref: articleRef },
+                  h("p", { className: "musee-reader-note" }, t("reader.translationNote")),
+                  (data.sections || []).map(
+                    (section) => h(
+                      "section",
+                      { key: section.id, id: section.id, className: "musee-translated-section" },
+                      h("h2", null, section.title),
+                      fullTranslations[section.id] ? fullTranslations[section.id].split(/\n{2,}/).map((paragraph, index) => h("p", { key: index }, paragraph)) : h("p", { className: "musee-reader-placeholder" }, fullProgress.active ? t("loading") : t("reader.translateAll"))
+                    )
+                  ),
+                  h("p", { className: "musee-reader-note" }, t("reader.referencesOriginal"))
+                ) : h("div", {
                   className: "musee-fulltext",
                   ref: articleRef,
                   onClick: onArticleClick,
