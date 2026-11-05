@@ -613,10 +613,13 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
     if (view.kind === 'reader') {
       return h(Reader, {
         paper: view.paper,
+        item: libraryById.get(view.paper.id),
         t,
         targetLang,
         onPdf: () => openPdf(view.paper),
         onBack: () => setView({ kind: 'paper', paper: view.paper }),
+        onEnsureSaved: ensureSaved,
+        onUpdate: updateItem,
       });
     }
 

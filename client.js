@@ -70,7 +70,13 @@ window.__ModuleLoader__.load({
         translate: (title, abstract, lang) => request("/translate", { method: "POST", body: { title, abstract, lang } }),
         translateTitles: (titles, lang) => request("/translate-titles", { method: "POST", body: { titles, lang } }),
         translateSection: (heading, text2, lang) => request("/translate-section", { method: "POST", body: { heading, text: text2, lang } }),
-        fulltext: (arxivId) => request(`/fulltext?arxivId=${encodeURIComponent(arxivId)}`),
+        fulltext: (paper) => {
+          const params = new URLSearchParams();
+          if (paper?.arxivId) params.set("arxivId", paper.arxivId);
+          if (paper?.doi) params.set("doi", paper.doi);
+          if (paper?.title) params.set("title", paper.title);
+          return request(`/fulltext?${params.toString()}`);
+        },
         preferences: () => request("/preferences"),
         follow: (journalId, follow) => request("/preferences", { method: "POST", body: { action: follow ? "follow" : "unfollow", journalId } }),
         home: () => request("/home"),
@@ -543,6 +549,25 @@ window.__ModuleLoader__.load({
     .musee-reader-toc-item.active { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); font-weight: 600; }
     .musee-reader-toc-item.level-2 { padding-left: 20px; font-size: 12px; }
     .musee-reader-scroll { flex: 1 1 auto; min-width: 0; overflow: auto; }
+    .musee-reader-notes {
+      flex: 0 0 270px; width: 270px; overflow: auto; padding: 14px 12px;
+      border-left: 1px solid var(--dsw-alias-border-l1);
+      background: var(--dsw-alias-bg-layer-1);
+    }
+    .musee-reader-ann { padding: 9px 0; border-bottom: 1px solid var(--dsw-alias-border-l1); }
+    .musee-reader-ann-main { display: block; width: 100%; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--dsw-alias-label-primary); }
+    .musee-reader-ann-section { display: block; margin-bottom: 3px; color: var(--musee-accent); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; }
+    .musee-reader-ann-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 1.55; }
+    .musee-reader-ann-note { margin-top: 5px; color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; }
+    .musee-reader-ann-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .musee-reader-toolbar {
+      position: fixed; z-index: 86; transform: translate(-50%, -100%);
+      display: flex; gap: 4px; padding: 4px;
+      border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px;
+      background: var(--dsw-alias-bg-overlay);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--dsw-alias-label-primary) 18%, transparent);
+    }
+    ::highlight(musee-annotations) { background-color: rgba(245, 197, 66, .52); color: inherit; }
     .musee-reader-paper { max-width: 860px; margin: 0 auto; padding: 26px 40px 100px; }
     .musee-reader-authors {
       color: var(--dsw-alias-label-secondary); font-size: 12.5px; line-height: 1.7;
@@ -561,6 +586,7 @@ window.__ModuleLoader__.load({
     .musee-translated-section { margin: 0 0 28px; }
     .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
     .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
+    .musee-resume { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: var(--musee-accent); font-size: 11.5px; cursor: pointer; }
 
     .musee-fulltext { font-size: 15px; line-height: 1.85; }
     .musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }
@@ -764,6 +790,7 @@ window.__ModuleLoader__.load({
       .musee-search { width: 46%; }
       .musee-header { gap: 12px; }
       .musee-reader-toc { display: none; }
+      .musee-reader-notes { display: none; }
       .musee-reader-paper { padding: 20px 18px 80px; }
       .musee-reader-title { max-width: 32%; }
     }
@@ -967,7 +994,15 @@ window.__ModuleLoader__.load({
         const [status, setStatus] = useState("unread");
         const [dirty, setDirty] = useState(false);
         const [saveState, setSaveState] = useState("idle");
+        const [resume, setResume] = useState(null);
         const dirtyRef = useRef(false);
+        useEffect(() => {
+          try {
+            setResume(JSON.parse(localStorage.getItem(`musee:progress:${paper.id || paper.doi || paper.title}`) || "null"));
+          } catch {
+            setResume(null);
+          }
+        }, [paper.id, paper.doi, paper.title]);
         useEffect(() => {
           setNote(item?.note || "");
           setTags((item?.tags || []).join(", "));
@@ -1061,13 +1096,18 @@ window.__ModuleLoader__.load({
               translating ? h(Spinner) : h(IconTranslate),
               translating ? t("paper.translating") : t("paper.translate")
             ),
-            paper.arxivId ? h(Button, { variant: "primary", onClick: () => onRead(paper) }, h(IconBook), t("paper.fulltext")) : null,
+            paper.arxivId || paper.doi ? h(Button, { variant: "primary", onClick: () => onRead(paper) }, h(IconBook), t("paper.fulltext")) : null,
             h(Button, { onClick: () => onCite([item || paper]) }, h(IconQuote), t("paper.cite")),
             paper.arxivId ? h(Button, { onClick: () => onPdf(paper) }, h(IconExternal), t("paper.pdf")) : paper.url ? h("a", { className: "musee-btn", href: paper.url, target: "_blank", rel: "noreferrer" }, h(IconExternal), t("paper.open")) : null
           ),
           h(
             "div",
             { className: "musee-card" },
+            resume && (paper.arxivId || paper.doi) ? h(
+              "button",
+              { type: "button", className: "musee-resume", onClick: () => onRead(paper) },
+              tr(t, "paper.resume", { title: resume.title || resume.id })
+            ) : null,
             h("h2", null, t("paper.abstract")),
             !paper.abstract && !hasTranslation ? h("div", { className: "musee-empty", style: { padding: "14px 0" } }, t("paper.noAbstract")) : null,
             showOriginal && paper.abstract ? h("div", { className: "musee-abstract" }, paper.abstract) : null,
@@ -1533,12 +1573,16 @@ window.__ModuleLoader__.load({
         "reader.translationNote": "Machine translation of the full text. Figures, tables, and equations stay in the original view.",
         "reader.referencesOriginal": "References stay in the original view.",
         "reader.translateAllError": "Full-text translation stopped: {message}",
+        "reader.annotations": "Annotations",
+        "reader.noAnnotations": "Select text in the article to highlight it or attach a note.",
+        "reader.annotationHint": "Highlights and notes are saved with this paper and included in Markdown export.",
         "paper.notes": "Reading notes",
         "paper.notesHint": "Save the paper to keep notes, status, and tags.",
         "paper.status": "Status",
         "paper.tags": "Tags",
         "paper.tagsHint": "Comma separated, e.g. methods, review",
         "paper.abstract": "Abstract",
+        "paper.resume": "Last read: {title}",
         "paper.noAbstract": "No abstract is available for this record.",
         "paper.meta": "Publication",
         "paper.doi": "DOI",
@@ -1725,12 +1769,16 @@ window.__ModuleLoader__.load({
         "reader.translationNote": "全文机器翻译；图、表、公式仍保留在原文视图。",
         "reader.referencesOriginal": "参考文献保留在原文视图。",
         "reader.translateAllError": "全文翻译中断：{message}",
+        "reader.annotations": "批注",
+        "reader.noAnnotations": "在正文里选中文字，即可高亮或写批注。",
+        "reader.annotationHint": "高亮和批注随论文保存，并会进入 Markdown 导出。",
         "paper.notes": "阅读笔记",
         "paper.notesHint": "收藏后可以记笔记、标状态、加标签。",
         "paper.status": "状态",
         "paper.tags": "标签",
         "paper.tagsHint": "用逗号分隔，例如：方法, 综述",
         "paper.abstract": "摘要",
+        "paper.resume": "上次读到：{title}",
         "paper.noAbstract": "这条记录没有摘要。",
         "paper.meta": "出版信息",
         "paper.doi": "DOI",
@@ -1917,12 +1965,16 @@ window.__ModuleLoader__.load({
         "reader.translationNote": "Traduction automatique du texte intégral. Les figures, tableaux et équations restent dans la vue originale.",
         "reader.referencesOriginal": "Les références restent dans la vue originale.",
         "reader.translateAllError": "Traduction interrompue : {message}",
+        "reader.annotations": "Annotations",
+        "reader.noAnnotations": "Sélectionnez du texte dans l’article pour le surligner ou y joindre une note.",
+        "reader.annotationHint": "Les surlignages et notes sont enregistrés avec l’article et inclus dans l’export Markdown.",
         "paper.notes": "Notes de lecture",
         "paper.notesHint": "Enregistrez l’article pour garder notes, statut et étiquettes.",
         "paper.status": "Statut",
         "paper.tags": "Étiquettes",
         "paper.tagsHint": "Séparées par des virgules, par ex. méthodes, revue",
         "paper.abstract": "Résumé",
+        "paper.resume": "Dernière lecture : {title}",
         "paper.noAbstract": "Aucun résumé disponible pour cette notice.",
         "paper.meta": "Publication",
         "paper.doi": "DOI",
@@ -3132,7 +3184,7 @@ window.__ModuleLoader__.load({
         const originalDocument = document2;
         const currentScript = originalDocument.currentScript;
         window2.DocumentFragment;
-        const HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter;
+        const HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter2 = window2.NodeFilter;
         window2.NamedNodeMap === void 0 && (window2.NamedNodeMap || window2.MozNamedAttrMap);
         window2.HTMLFormElement;
         const DOMParser = window2.DOMParser, trustedTypes = window2.trustedTypes;
@@ -3748,7 +3800,7 @@ window.__ModuleLoader__.load({
         };
         const _createNodeIterator = function _createNodeIterator2(root) {
           const doc = getOwnerDocument ? getOwnerDocument(root) : root.ownerDocument;
-          return createNodeIterator.call(doc || root, root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_TEXT | NodeFilter.SHOW_PROCESSING_INSTRUCTION | NodeFilter.SHOW_CDATA_SECTION, null);
+          return createNodeIterator.call(doc || root, root, NodeFilter2.SHOW_ELEMENT | NodeFilter2.SHOW_COMMENT | NodeFilter2.SHOW_TEXT | NodeFilter2.SHOW_PROCESSING_INSTRUCTION | NodeFilter2.SHOW_CDATA_SECTION, null);
         };
         const _stripTemplateExpressions = function _stripTemplateExpressions2(value) {
           value = stringReplace(value, MUSTACHE_EXPR$1, " ");
@@ -3767,7 +3819,7 @@ window.__ModuleLoader__.load({
         const _scrubOwnCharacterData = function _scrubOwnCharacterData2(node) {
           node.normalize();
           const doc = getOwnerDocument ? getOwnerDocument(node) : node.ownerDocument;
-          const walker = createNodeIterator.call(doc || node, node, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_CDATA_SECTION | NodeFilter.SHOW_PROCESSING_INSTRUCTION, null);
+          const walker = createNodeIterator.call(doc || node, node, NodeFilter2.SHOW_TEXT | NodeFilter2.SHOW_COMMENT | NodeFilter2.SHOW_CDATA_SECTION | NodeFilter2.SHOW_PROCESSING_INSTRUCTION, null);
           let currentNode = walker.nextNode();
           while (currentNode) {
             currentNode.data = _stripTemplateExpressions(currentNode.data);
@@ -4212,6 +4264,86 @@ window.__ModuleLoader__.load({
       function tr2(t, key, params) {
         return tFormat(t(key), params);
       }
+      var BLOCK_SELECTOR = "p, li, h1, h2, h3, h4, blockquote, figcaption, td";
+      function newId() {
+        try {
+          return crypto.randomUUID();
+        } catch {
+          return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        }
+      }
+      function blocksOf(root) {
+        if (!root) return [];
+        return [...root.querySelectorAll(BLOCK_SELECTOR)].filter((element) => element.textContent.trim());
+      }
+      function blockOf(node, blocks, root) {
+        let element = node?.nodeType === 1 ? node : node?.parentElement;
+        while (element && element !== root) {
+          if (blocks.includes(element)) return element;
+          element = element.parentElement;
+        }
+        return null;
+      }
+      function offsetIn(block, container, offset) {
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(block);
+          range.setEnd(container, offset);
+          return range.toString().length;
+        } catch {
+          return 0;
+        }
+      }
+      function anchorsFromRange(root, range) {
+        const blocks = blocksOf(root);
+        const startBlock = blockOf(range.startContainer, blocks, root);
+        const endBlock = blockOf(range.endContainer, blocks, root);
+        if (!startBlock || !endBlock) return null;
+        const startIndex = blocks.indexOf(startBlock);
+        const endIndex = blocks.indexOf(endBlock);
+        if (startIndex < 0 || endIndex < startIndex) return null;
+        const anchors = [];
+        for (let index = startIndex; index <= endIndex; index += 1) {
+          const block = blocks[index];
+          const start = index === startIndex ? offsetIn(block, range.startContainer, range.startOffset) : 0;
+          const end = index === endIndex ? offsetIn(block, range.endContainer, range.endOffset) : block.textContent.length;
+          if (end > start) anchors.push({ block: index, start, end });
+        }
+        return anchors.length ? anchors : null;
+      }
+      function rangeFromAnchor(blocks, anchor) {
+        const block = blocks[anchor.block];
+        if (!block) return null;
+        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+        let position = 0;
+        let startNode = null;
+        let startOffset = 0;
+        let endNode = null;
+        let endOffset = 0;
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          const length = node.nodeValue.length;
+          if (!startNode && anchor.start <= position + length) {
+            startNode = node;
+            startOffset = Math.max(0, anchor.start - position);
+          }
+          if (startNode && anchor.end <= position + length) {
+            endNode = node;
+            endOffset = Math.max(0, anchor.end - position);
+            break;
+          }
+          position += length;
+        }
+        if (!startNode || !endNode) return null;
+        try {
+          const range = document.createRange();
+          range.setStart(startNode, Math.min(startOffset, startNode.nodeValue.length));
+          range.setEnd(endNode, Math.min(endOffset, endNode.nodeValue.length));
+          return range;
+        } catch {
+          return null;
+        }
+      }
       function splitChunks(text2, max = 6e3) {
         const value = String(text2 || "").trim();
         if (value.length <= max) return value ? [value] : [];
@@ -4228,7 +4360,7 @@ window.__ModuleLoader__.load({
         if (rest) chunks.push(rest);
         return chunks;
       }
-      function Reader({ paper, t, targetLang, onBack, onPdf }) {
+      function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSaved, onUpdate }) {
         const [data, setData] = useState(null);
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState("");
@@ -4240,8 +4372,23 @@ window.__ModuleLoader__.load({
         const [fullTranslations, setFullTranslations] = useState({});
         const [fullProgress, setFullProgress] = useState({ done: 0, total: 0, active: false });
         const [fullError, setFullError] = useState("");
+        const [htmlAnnotations, setHtmlAnnotations] = useState(() => Array.isArray(item?.htmlAnnotations) ? item.htmlAnnotations : []);
+        const [selection, setSelection] = useState(null);
+        const [notesOpen, setNotesOpen] = useState(false);
+        const [noteDraft, setNoteDraft] = useState(null);
+        const [noteText, setNoteText] = useState("");
+        const [annotationError, setAnnotationError] = useState("");
+        const [savingAnnotation, setSavingAnnotation] = useState(false);
         const articleRef = useRef(null);
         const stopFullRef = useRef(false);
+        const progressKey = `musee:progress:${paper.id || paper.doi || paper.title}`;
+        const [resume] = useState(() => {
+          try {
+            return JSON.parse(localStorage.getItem(progressKey) || "null");
+          } catch {
+            return null;
+          }
+        });
         useEffect(() => {
           let alive = true;
           setLoading(true);
@@ -4253,7 +4400,7 @@ window.__ModuleLoader__.load({
           setFullProgress({ done: 0, total: 0, active: false });
           setFullError("");
           stopFullRef.current = false;
-          api.fulltext(paper.arxivId).then((result) => {
+          api.fulltext(paper).then((result) => {
             if (!alive) return;
             setData(result);
             setActive(result.toc?.[0]?.id || "");
@@ -4270,6 +4417,74 @@ window.__ModuleLoader__.load({
           if (!data?.available) return "";
           return purify_default.sanitize(data.html || "", SANITIZE);
         }, [data]);
+        useEffect(() => {
+          const api2 = globalThis.CSS?.highlights;
+          const HighlightCtor = globalThis.Highlight;
+          if (!api2 || typeof HighlightCtor !== "function") return void 0;
+          if (viewMode !== "original" || !articleRef.current) {
+            api2.delete("musee-annotations");
+            return void 0;
+          }
+          const blocks = blocksOf(articleRef.current);
+          const ranges = [];
+          for (const annotation of htmlAnnotations) {
+            for (const anchor of annotation.ranges || []) {
+              const range = rangeFromAnchor(blocks, anchor);
+              if (range) ranges.push(range);
+            }
+          }
+          if (ranges.length) api2.set("musee-annotations", new HighlightCtor(...ranges));
+          else api2.delete("musee-annotations");
+          return () => api2.delete("musee-annotations");
+        }, [sanitized, htmlAnnotations, viewMode]);
+        useEffect(() => {
+          if (!data || !resume?.id) return void 0;
+          if (!(data.toc || []).some((entry) => entry.id === resume.id)) return void 0;
+          const timer = setTimeout(() => {
+            const element = document.getElementById(resume.id);
+            if (element) {
+              element.scrollIntoView({ block: "start" });
+              setActive(resume.id);
+            }
+          }, 220);
+          return () => clearTimeout(timer);
+        }, [data]);
+        useEffect(() => {
+          if (!data || !articleRef.current) return void 0;
+          const scroller = articleRef.current.closest(".musee-reader-scroll");
+          if (!scroller) return void 0;
+          let frame = 0;
+          const update = () => {
+            const threshold = scroller.getBoundingClientRect().top + 110;
+            let current = data.toc?.[0]?.id || "";
+            for (const entry of data.toc || []) {
+              const element = document.getElementById(entry.id);
+              if (element && element.getBoundingClientRect().top <= threshold) current = entry.id;
+            }
+            if (current) setActive(current);
+          };
+          const onScroll = () => {
+            if (frame) return;
+            frame = requestAnimationFrame(() => {
+              frame = 0;
+              update();
+            });
+          };
+          scroller.addEventListener("scroll", onScroll, { passive: true });
+          update();
+          return () => {
+            scroller.removeEventListener("scroll", onScroll);
+            if (frame) cancelAnimationFrame(frame);
+          };
+        }, [data, viewMode]);
+        useEffect(() => {
+          if (!data || !active) return;
+          const entry = (data.toc || []).find((item2) => item2.id === active);
+          try {
+            localStorage.setItem(progressKey, JSON.stringify({ id: active, title: entry?.title || active, at: Date.now() }));
+          } catch {
+          }
+        }, [active, data, progressKey]);
         const sectionMap = useMemo(() => new Map((data?.sections || []).map((section) => [section.id, section])), [data]);
         const scrollTo = (id) => {
           const root = articleRef.current;
@@ -4339,6 +4554,94 @@ window.__ModuleLoader__.load({
             setTranslating(false);
           }
         };
+        const onArticleMouseUp = () => {
+          const current = window.getSelection();
+          if (!current || current.isCollapsed || !articleRef.current) {
+            setSelection(null);
+            return;
+          }
+          const range = current.getRangeAt(0);
+          if (!articleRef.current.contains(range.commonAncestorContainer)) return;
+          const anchors = anchorsFromRange(articleRef.current, range);
+          const text2 = current.toString().replace(/\s+/g, " ").trim();
+          if (!anchors || !text2) return;
+          const bounds = range.getBoundingClientRect();
+          setSelection({
+            text: text2,
+            ranges: anchors,
+            x: bounds.left + bounds.width / 2,
+            y: Math.max(64, bounds.top - 10)
+          });
+        };
+        const persistAnnotations = async (next) => {
+          setSavingAnnotation(true);
+          setAnnotationError("");
+          try {
+            const target = item?.id ? item : await onEnsureSaved(paper);
+            if (!target?.id) throw new Error("论文还没有收藏，无法保存批注。");
+            await onUpdate(target.id, { htmlAnnotations: next });
+            setHtmlAnnotations(next);
+          } catch (reason) {
+            setAnnotationError(reason?.message || String(reason));
+            throw reason;
+          } finally {
+            setSavingAnnotation(false);
+          }
+        };
+        const makeAnnotation = (note = "") => ({
+          id: newId(),
+          text: selection.text,
+          note,
+          section: activeSection?.title || "",
+          createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+          ranges: selection.ranges
+        });
+        const highlightSelection = async () => {
+          if (!selection) return;
+          try {
+            await persistAnnotations([...htmlAnnotations, makeAnnotation("")]);
+            setNotesOpen(true);
+            setSelection(null);
+            window.getSelection()?.removeAllRanges();
+          } catch {
+          }
+        };
+        const startAnnotationNote = () => {
+          if (!selection) return;
+          setNoteDraft(makeAnnotation(""));
+          setNoteText("");
+          setNotesOpen(true);
+          setSelection(null);
+        };
+        const saveAnnotationNote = async () => {
+          if (!noteDraft) return;
+          const exists = htmlAnnotations.some((annotation) => annotation.id === noteDraft.id);
+          const next = exists ? htmlAnnotations.map((annotation) => annotation.id === noteDraft.id ? { ...annotation, note: noteText } : annotation) : [...htmlAnnotations, { ...noteDraft, note: noteText }];
+          try {
+            await persistAnnotations(next);
+            setNoteDraft(null);
+            setNoteText("");
+          } catch {
+          }
+        };
+        const editAnnotation = (annotation) => {
+          setNoteDraft(annotation);
+          setNoteText(annotation.note || "");
+        };
+        const removeAnnotation = async (annotation) => {
+          try {
+            await persistAnnotations(htmlAnnotations.filter((entry) => entry.id !== annotation.id));
+          } catch {
+          }
+        };
+        const jumpToAnnotation = (annotation) => {
+          if (viewMode !== "original") setViewMode("original");
+          setTimeout(() => {
+            const blocks = blocksOf(articleRef.current);
+            const block = blocks[annotation.ranges?.[0]?.block];
+            block?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 80);
+        };
         const onArticleClick = (event) => {
           const image = event.target.closest?.("img");
           if (image?.src) {
@@ -4388,12 +4691,17 @@ window.__ModuleLoader__.load({
             ),
             h(
               Button,
+              { size: "sm", onClick: () => setNotesOpen((value) => !value) },
+              `${t("reader.annotations")} ${htmlAnnotations.length}`
+            ),
+            h(
+              Button,
               { size: "sm", onClick: translateSection, disabled: translating || !activeSection?.text },
               translating ? h(Spinner) : null,
               translating ? t("reader.translating") : t("reader.translate")
             )
           ) : null,
-          data?.absUrl ? h("a", { className: "musee-btn sm", href: data.absUrl, target: "_blank", rel: "noreferrer" }, "arXiv") : null,
+          data?.absUrl ? h("a", { className: "musee-btn sm", href: data.absUrl, target: "_blank", rel: "noreferrer" }, data.source === "pmc" ? "Europe PMC" : "arXiv") : null,
           data?.pdfUrl ? onPdf ? h(Button, { size: "sm", onClick: onPdf }, "PDF") : h("a", { className: "musee-btn sm", href: data.pdfUrl, target: "_blank", rel: "noreferrer" }, h(IconExternal), "PDF") : null
         );
         if (loading) {
@@ -4421,6 +4729,8 @@ window.__ModuleLoader__.load({
               "div",
               { className: "musee-page" },
               h("div", { className: "musee-empty" }, h("strong", null, t("reader.unavailable"))),
+              data?.reason ? h("p", { className: "musee-reader-note", style: { textAlign: "center" } }, data.reason) : null,
+              data?.absUrl ? h("div", { style: { textAlign: "center" } }, h("a", { className: "musee-btn", href: data.absUrl, target: "_blank", rel: "noreferrer" }, data.source === "pmc" ? "Europe PMC" : "arXiv")) : null,
               data?.pdfUrl ? h("div", { style: { textAlign: "center" } }, h("a", { className: "musee-btn", href: data.pdfUrl, target: "_blank", rel: "noreferrer" }, t("reader.openPdf"))) : null
             )
           );
@@ -4431,21 +4741,21 @@ window.__ModuleLoader__.load({
           header,
           h(
             "div",
-            { className: "musee-reader-body" },
+            { className: `musee-reader-body ${notesOpen ? "with-notes" : ""}` },
             h(
               "aside",
               { className: "musee-reader-toc" },
               h("div", { className: "musee-rail-title" }, t("reader.toc")),
               (data.toc || []).map(
-                (item) => h(
+                (item2) => h(
                   "button",
                   {
-                    key: `${item.id}-${item.title}`,
+                    key: `${item2.id}-${item2.title}`,
                     type: "button",
-                    className: `musee-reader-toc-item level-${item.level} ${active === item.id ? "active" : ""}`,
-                    onClick: () => scrollTo(item.id)
+                    className: `musee-reader-toc-item level-${item2.level} ${active === item2.id ? "active" : ""}`,
+                    onClick: () => scrollTo(item2.id)
                   },
-                  item.title
+                  item2.title
                 )
               )
             ),
@@ -4456,6 +4766,7 @@ window.__ModuleLoader__.load({
                 "div",
                 { className: "musee-reader-paper" },
                 data.authors ? h("div", { className: "musee-reader-authors" }, data.authors) : null,
+                annotationError ? h(ErrorBanner, { message: annotationError }) : null,
                 fullError ? h(ErrorBanner, { message: fullError }) : null,
                 translation ? h(
                   "div",
@@ -4485,11 +4796,61 @@ window.__ModuleLoader__.load({
                   className: "musee-fulltext",
                   ref: articleRef,
                   onClick: onArticleClick,
+                  onMouseUp: onArticleMouseUp,
                   dangerouslySetInnerHTML: { __html: sanitized }
                 })
               )
-            )
+            ),
+            notesOpen ? h(
+              "aside",
+              { className: "musee-reader-notes" },
+              h("div", { className: "musee-rail-title" }, `${t("reader.annotations")} · ${htmlAnnotations.length}`),
+              htmlAnnotations.length ? htmlAnnotations.map(
+                (annotation) => h(
+                  "div",
+                  { key: annotation.id, className: "musee-reader-ann" },
+                  h(
+                    "button",
+                    { type: "button", className: "musee-reader-ann-main", onClick: () => jumpToAnnotation(annotation) },
+                    annotation.section ? h("span", { className: "musee-reader-ann-section" }, annotation.section) : null,
+                    h("span", { className: "musee-reader-ann-text" }, annotation.text)
+                  ),
+                  annotation.note ? h("div", { className: "musee-reader-ann-note" }, annotation.note) : null,
+                  h(
+                    "div",
+                    { className: "musee-reader-ann-actions" },
+                    h("button", { type: "button", className: "musee-pdf-ann-action", onClick: () => editAnnotation(annotation) }, "✎"),
+                    h("button", { type: "button", className: "musee-pdf-ann-action", onClick: () => removeAnnotation(annotation) }, "×")
+                  )
+                )
+              ) : h("p", { className: "musee-reader-note" }, t("reader.noAnnotations")),
+              h("p", { className: "musee-reader-note" }, t("reader.annotationHint"))
+            ) : null
           ),
+          selection && viewMode === "original" ? h(
+            "div",
+            { className: "musee-reader-toolbar", style: { left: `${selection.x}px`, top: `${selection.y}px` } },
+            h(Button, { size: "sm", variant: "primary", onClick: highlightSelection, disabled: savingAnnotation }, t("pdf.highlight")),
+            h(Button, { size: "sm", onClick: startAnnotationNote, disabled: savingAnnotation }, t("pdf.note"))
+          ) : null,
+          noteDraft ? h(
+            Modal,
+            {
+              title: t("pdf.noteTitle"),
+              onClose: () => setNoteDraft(null),
+              footer: [
+                h(Button, { key: "save", variant: "primary", onClick: saveAnnotationNote, disabled: savingAnnotation }, savingAnnotation ? t("pdf.saving") : t("pdf.save")),
+                h(Button, { key: "cancel", onClick: () => setNoteDraft(null) }, t("pdf.cancel"))
+              ]
+            },
+            h("blockquote", { className: "musee-pdf-quote" }, noteDraft.text),
+            h("textarea", {
+              className: "musee-textarea",
+              value: noteText,
+              placeholder: t("pdf.notePlaceholder"),
+              onChange: (event) => setNoteText(event.target.value)
+            })
+          ) : null,
           lightbox ? h(
             "div",
             { className: "musee-lightbox", role: "button", tabIndex: 0, onClick: () => setLightbox(""), onKeyDown: (event) => {
@@ -4709,7 +5070,7 @@ window.__ModuleLoader__.load({
       function tr3(t, key, params) {
         return tFormat(t(key), params);
       }
-      function newId() {
+      function newId2() {
         try {
           return crypto.randomUUID();
         } catch {
@@ -4890,7 +5251,7 @@ window.__ModuleLoader__.load({
           }
         };
         const makeAnnotation = () => ({
-          id: newId(),
+          id: newId2(),
           page: selection.page,
           text: selection.text,
           rects: selection.rects,
@@ -5613,10 +5974,13 @@ window.__ModuleLoader__.load({
           if (view.kind === "reader") {
             return h(Reader, {
               paper: view.paper,
+              item: libraryById.get(view.paper.id),
               t,
               targetLang,
               onPdf: () => openPdf(view.paper),
-              onBack: () => setView({ kind: "paper", paper: view.paper })
+              onBack: () => setView({ kind: "paper", paper: view.paper }),
+              onEnsureSaved: ensureSaved,
+              onUpdate: updateItem
             });
           }
           if (view.kind === "paper") {

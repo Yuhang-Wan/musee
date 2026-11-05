@@ -99,6 +99,7 @@ export async function createStore(dataDir) {
         note: existing.note || '',
         tags: existing.tags || [],
         pdfAnnotations: existing.pdfAnnotations || [],
+        htmlAnnotations: existing.htmlAnnotations || [],
         savedAt: existing.savedAt || stamp,
         updatedAt: stamp,
       };
@@ -109,6 +110,7 @@ export async function createStore(dataDir) {
         note: '',
         tags: [],
         pdfAnnotations: [],
+        htmlAnnotations: [],
         savedAt: stamp,
         updatedAt: stamp,
       });
@@ -145,6 +147,22 @@ export async function createStore(dataDir) {
           : [],
       })).filter((annotation) => annotation.id && annotation.text);
     }
+    if (Array.isArray(patch.htmlAnnotations)) {
+      item.htmlAnnotations = patch.htmlAnnotations.slice(0, 400).map((annotation) => ({
+        id: String(annotation.id || '').slice(0, 80),
+        section: String(annotation.section || '').slice(0, 200),
+        text: String(annotation.text || '').slice(0, 4000),
+        note: String(annotation.note || '').slice(0, 4000),
+        createdAt: String(annotation.createdAt || nowIso()).slice(0, 40),
+        ranges: Array.isArray(annotation.ranges)
+          ? annotation.ranges.slice(0, 80).map((range) => ({
+              block: Math.max(0, Number(range.block) || 0),
+              start: Math.max(0, Number(range.start) || 0),
+              end: Math.max(0, Number(range.end) || 0),
+            }))
+          : [],
+      })).filter((annotation) => annotation.id && annotation.text && annotation.ranges.length);
+    }
     item.updatedAt = nowIso();
     await persistLibrary();
     return item;
@@ -173,6 +191,14 @@ export async function createStore(dataDir) {
         lines.push('**PDF 批注**：', '');
         for (const annotation of item.pdfAnnotations) {
           lines.push(`> p.${annotation.page}：${annotation.text}`);
+          if (annotation.note) lines.push('', annotation.note);
+          lines.push('');
+        }
+      }
+      if (item.htmlAnnotations?.length) {
+        lines.push('**全文批注**：', '');
+        for (const annotation of item.htmlAnnotations) {
+          lines.push(`> ${annotation.section ? `${annotation.section} · ` : ''}${annotation.text}`);
           if (annotation.note) lines.push('', annotation.note);
           lines.push('');
         }

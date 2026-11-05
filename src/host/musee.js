@@ -7,6 +7,7 @@ import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, 
 import { latestByCategory } from './arxiv.js';
 import { cite } from './cite.js';
 import { fetchArxivFulltext } from './fulltext.js';
+import { fetchPmcFulltext, isDoi, normalizeDoi } from './pmc.js';
 import { fetchSource, searchWorks, worksBySource, worksBySourcePage, yearCounts } from './openalex.js';
 import { createStore } from './store.js';
 import { createTranslator } from './translate.js';
@@ -208,11 +209,28 @@ export function createMusee(ctx, config = {}) {
 
     if (pathname === '/fulltext') {
       const arxivId = (url.searchParams.get('arxivId') || '').trim().replace(/^arxiv:/i, '').replace(/v\d+$/, '');
-      if (!/^[A-Za-z0-9][A-Za-z0-9.\-/]{2,40}$/.test(arxivId) || arxivId.includes('..')) {
-        return json({ error: '无效的 arXiv 编号。' }, 400);
+      const doi = normalizeDoi(url.searchParams.get('doi') || '');
+      const title = (url.searchParams.get('title') || '').trim().slice(0, 300);
+      let arxiv = null;
+      if (arxivId) {
+        if (!/^[A-Za-z0-9][A-Za-z0-9.\-/]{2,40}$/.test(arxivId) || arxivId.includes('..')) {
+          if (!isDoi(doi)) return json({ error: '无效的 arXiv 编号。' }, 400);
+        } else {
+          arxiv = await fulltextCache.wrap(`fulltext:${arxivId}`, () => fetchArxivFulltext(arxivId));
+          if (arxiv.available || !isDoi(doi)) return json(arxiv);
+        }
       }
-      const data = await fulltextCache.wrap(`fulltext:${arxivId}`, () => fetchArxivFulltext(arxivId));
-      return json(data);
+      if (isDoi(doi) || title) {
+        const pmc = await fulltextCache.wrap(`pmc:${doi || title}`, () => fetchPmcFulltext({ doi, title }));
+        return json(pmc);
+      }
+      return json({
+        available: false,
+        source: 'none',
+        reason: '没有 arXiv 编号或 DOI，找不到开放全文。',
+        absUrl: '',
+        pdfUrl: null,
+      });
     }
 
     if (pathname === '/translate-section' && request.method === 'POST') {

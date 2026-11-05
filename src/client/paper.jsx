@@ -48,7 +48,16 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
   const [status, setStatus] = useState('unread');
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState('idle');
+  const [resume, setResume] = useState(null);
   const dirtyRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      setResume(JSON.parse(localStorage.getItem(`musee:progress:${paper.id || paper.doi || paper.title}`) || 'null'));
+    } catch {
+      setResume(null);
+    }
+  }, [paper.id, paper.doi, paper.title]);
 
   useEffect(() => {
     setNote(item?.note || '');
@@ -158,7 +167,7 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
         translating ? h(Spinner) : h(IconTranslate),
         translating ? t('paper.translating') : t('paper.translate'),
       ),
-      paper.arxivId ? h(Button, { variant: 'primary', onClick: () => onRead(paper) }, h(IconBook), t('paper.fulltext')) : null,
+      paper.arxivId || paper.doi ? h(Button, { variant: 'primary', onClick: () => onRead(paper) }, h(IconBook), t('paper.fulltext')) : null,
       h(Button, { onClick: () => onCite([item || paper]) }, h(IconQuote), t('paper.cite')),
       paper.arxivId
         ? h(Button, { onClick: () => onPdf(paper) }, h(IconExternal), t('paper.pdf'))
@@ -170,6 +179,13 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
     h(
       'div',
       { className: 'musee-card' },
+      resume && (paper.arxivId || paper.doi)
+        ? h(
+            'button',
+            { type: 'button', className: 'musee-resume', onClick: () => onRead(paper) },
+            tr(t, 'paper.resume', { title: resume.title || resume.id }),
+          )
+        : null,
       h('h2', null, t('paper.abstract')),
       !paper.abstract && !hasTranslation ? h('div', { className: 'musee-empty', style: { padding: '14px 0' } }, t('paper.noAbstract')) : null,
       showOriginal && paper.abstract ? h('div', { className: 'musee-abstract' }, paper.abstract) : null,

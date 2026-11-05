@@ -4,9 +4,9 @@
 
 > 在 DeepSeek Harness 里读期刊、译摘要、管引用。
 
-Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的一个文献工作台插件：按学科浏览期刊最新论文与 arXiv 预印本，提供学术化中英翻译、期刊引用格式、一键与批量引用、收藏和阅读笔记。数据来自 OpenAlex 与 arXiv，个人数据全部保存在本地。
+Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的一个文献工作台插件：按学科浏览期刊最新论文与 arXiv 预印本，提供学术化中英翻译、期刊引用格式、一键与批量引用、收藏和阅读笔记。数据来自 OpenAlex、arXiv 与 Europe PMC，个人数据全部保存在本地。
 
-**Musée is a reading desk for journals and preprints inside DeepSeek Harness.** It browses recent journal articles and arXiv preprints by field, translates titles and abstracts into idiomatic academic Chinese with your own model, formats citations (GB/T 7714, APA, MLA, IEEE, BibTeX, RIS), and keeps a local library with reading status, tags, and notes.
+**Musée is a reading desk for journals and preprints inside DeepSeek Harness.** It browses recent journal articles and arXiv preprints by field, translates titles and abstracts into idiomatic academic Chinese with your own model, formats citations (GB/T 7714, APA, MLA, IEEE, BibTeX, RIS), and keeps a local library with reading status, tags, and notes. Data comes from OpenAlex, arXiv, and Europe PMC.
 
 ## 功能
 
@@ -21,6 +21,9 @@ Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - **往期浏览**：期刊页可按年份筛选（带每年篇数）、显示总篇数与卷/期，底部「加载更多」逐页翻看历史论文。
 - **标题翻译**：论文列表自动把标题批量译成当前翻译语言，缓存在本地；设置里可一键关闭，关闭后不再调用模型。
 - **OA 全文阅读**：论文有 arXiv 版本时出现「全文阅读」；左侧章节目录，正文含图、表、公式与参考文献，点图可放大，正文引用可跳到对应文献，支持按章节做学术翻译。
+- **PMC 开放全文**：没有 arXiv 但 DOI 对应 Europe PMC 开放全文的论文（生物医学等），也会自动抓取 JATS 正文；图、表暂以文字说明呈现。
+- **全文批注**：HTML 阅读器里选中文字即可高亮或写批注，按块级段落锚点保存，刷新/重开仍在，并进入 Markdown 导出。
+- **阅读进度**：自动记住上次读到的章节，论文详情显示「上次读到」，重开全文自动回到该节。
 - **全文翻译**：阅读器里一键「翻译全文」，按章节分批翻译并显示进度，可随时停止；译文视图按章节排列，原文视图保留图、表、公式与参考文献。结果按段落缓存，重复打开不再重复计费。
 - **与 DSH 同步的外观**：颜色走 DSH 的 `--dsw-*` token，跟随 DSH 的浅色、深色或“跟随系统”设置；编辑式红色强调在深浅色下自动调整明度，PDF 纸张保持原色。
 - **顶会论文**：NeurIPS、CVPR、ICCV、AAAI、IJCAI、ACL、EMNLP、KDD、ICRA、IROS、RSS，来自 OpenAlex 会议论文集。
@@ -96,13 +99,13 @@ JCR 影响因子是 Clarivate 的版权数据，Musée 不内置、也不抓取�
 
 ## 数据与合规
 
-- 只读取 **公开元数据与摘要**，不抓取付费全文，不绕过任何付费墙或登录墙。
-- 使用 OpenAlex 与 arXiv 的公开 API；请填写 `mailto` 以遵守 OpenAlex 的礼貌使用约定。
+- 只读取 **公开元数据、摘要与开放获取全文**，不抓取付费全文，不绕过任何付费墙或登录墙。
+- 使用 OpenAlex、arXiv 与 Europe PMC 的公开 API；请填写 `mailto` 以遵守 OpenAlex 的礼貌使用约定。
 - 翻译只把**标题与摘要**发送到你配置的模型，不发送整篇 PDF，也不上传到 Musée 自己的服务器（Musée 没有服务器）。
 - **期刊封面是 Musée 的原创排版设计**，不是出版商封面；出版商封面图有版权且没有稳定的授权 API，因此这里用按学科配色、由刊名缩写生成的封面替代。
 - **期刊简介是 Musée 撰写的范围说明**，不是出版商官方文案；官方描述可点“期刊官网”前往。
 - 顶会论文来自 OpenAlex 的会议论文集；ICML、ICLR、CoRL 等以 OpenReview 为主的会议收录不完整，后续会补其他数据源。
-- **全文来自 arXiv HTML**：正文、图片、表格和参考文献由 arXiv 页面解析，图片直接指向 arXiv 的公开地址；Musée 不转存、不再分发这些内容。没有 HTML 全文的论文会给出 PDF 链接。
+- **全文来自 arXiv HTML 或 Europe PMC JATS**：正文由对应公开页面解析；arXiv 图片直接指向 arXiv 的公开地址，PMC 图、表目前以文字说明呈现。Musée 不转存、不再分发这些内容。没有 HTML 全文的论文会给出可用的原文链接。
 - **PDF 预览**：arXiv PDF 通过本地同源路由交给 PDF.js 自绘阅读器；PDF 文件不落盘，只缓存于当前页面内存。其他出版商的付费或登录 PDF 不做代理。
 - **PDF 批注**：高亮/笔记保存为页码 + 归一化选区矩形，缩放后仍能对齐；文本只用于批注与翻译，不转存整篇 PDF。
 - 渲染前会在浏览器端用白名单清洗 HTML（移除脚本、样式与表单），只保留正文、图表、公式和链接。
@@ -116,7 +119,7 @@ Client（React，挂在整页 main 面板 + 左侧栏图标）
   ├─ 学术翻译、引用弹窗、笔记自动保存
   └─ 同源请求 /musee/api/*（带本次启动的 token）
 Host 插件
-  ├─ OpenAlex / arXiv 数据源与解析
+  ├─ OpenAlex / arXiv / Europe PMC 数据源与解析
   ├─ ctx.llm 学术翻译 + 磁盘缓存
   ├─ 引用格式与本地库
   └─ 同源 HTTP API（GET/POST）
@@ -158,8 +161,7 @@ cordis.patch.yml      插件清单
 
 ## 路线图
 
-- **v0.7 全文翻译（当前）**：按章节批量翻译、进度与停止、原文/译文双视图。
-- **v0.8 深读与批注**：HTML 阅读器段落高亮、PMC JATS 适配、阅读进度与章节笔记。
+- **v0.8 深读与开放全文（当前）**：HTML 段落高亮/批注、PMC JATS 适配、阅读进度。
 - **v0.9 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
 - **v1.0 智能阅读与全学科**：Agent 工具、论文问答、观点卡片、可导入期刊目录与 npm 发布。
 

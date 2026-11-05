@@ -425,6 +425,25 @@ export const CSS = `
 .musee-reader-toc-item.active { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); font-weight: 600; }
 .musee-reader-toc-item.level-2 { padding-left: 20px; font-size: 12px; }
 .musee-reader-scroll { flex: 1 1 auto; min-width: 0; overflow: auto; }
+.musee-reader-notes {
+  flex: 0 0 270px; width: 270px; overflow: auto; padding: 14px 12px;
+  border-left: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+.musee-reader-ann { padding: 9px 0; border-bottom: 1px solid var(--dsw-alias-border-l1); }
+.musee-reader-ann-main { display: block; width: 100%; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--dsw-alias-label-primary); }
+.musee-reader-ann-section { display: block; margin-bottom: 3px; color: var(--musee-accent); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; }
+.musee-reader-ann-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 1.55; }
+.musee-reader-ann-note { margin-top: 5px; color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; }
+.musee-reader-ann-actions { display: flex; gap: 6px; margin-top: 4px; }
+.musee-reader-toolbar {
+  position: fixed; z-index: 86; transform: translate(-50%, -100%);
+  display: flex; gap: 4px; padding: 4px;
+  border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px;
+  background: var(--dsw-alias-bg-overlay);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--dsw-alias-label-primary) 18%, transparent);
+}
+::highlight(musee-annotations) { background-color: rgba(245, 197, 66, .52); color: inherit; }
 .musee-reader-paper { max-width: 860px; margin: 0 auto; padding: 26px 40px 100px; }
 .musee-reader-authors {
   color: var(--dsw-alias-label-secondary); font-size: 12.5px; line-height: 1.7;
@@ -443,6 +462,7 @@ export const CSS = `
 .musee-translated-section { margin: 0 0 28px; }
 .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
 .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
+.musee-resume { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: var(--musee-accent); font-size: 11.5px; cursor: pointer; }
 
 .musee-fulltext { font-size: 15px; line-height: 1.85; }
 .musee-fulltext h1, .musee-fulltext h2 { font-size: 22px; line-height: 1.35; margin: 28px 0 12px; }
@@ -646,6 +666,7 @@ export const CSS = `
   .musee-search { width: 46%; }
   .musee-header { gap: 12px; }
   .musee-reader-toc { display: none; }
+  .musee-reader-notes { display: none; }
   .musee-reader-paper { padding: 20px 18px 80px; }
   .musee-reader-title { max-width: 32%; }
 }

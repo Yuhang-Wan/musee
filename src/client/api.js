@@ -62,7 +62,13 @@ export const api = {
   translate: (title, abstract, lang) => request('/translate', { method: 'POST', body: { title, abstract, lang } }),
   translateTitles: (titles, lang) => request('/translate-titles', { method: 'POST', body: { titles, lang } }),
   translateSection: (heading, text, lang) => request('/translate-section', { method: 'POST', body: { heading, text, lang } }),
-  fulltext: (arxivId) => request(`/fulltext?arxivId=${encodeURIComponent(arxivId)}`),
+  fulltext: (paper) => {
+    const params = new URLSearchParams();
+    if (paper?.arxivId) params.set('arxivId', paper.arxivId);
+    if (paper?.doi) params.set('doi', paper.doi);
+    if (paper?.title) params.set('title', paper.title);
+    return request(`/fulltext?${params.toString()}`);
+  },
   preferences: () => request('/preferences'),
   follow: (journalId, follow) =>
     request('/preferences', { method: 'POST', body: { action: follow ? 'follow' : 'unfollow', journalId } }),
