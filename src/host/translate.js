@@ -32,9 +32,9 @@ const TITLES_ZH = `Translate the following JSON array of academic paper titles i
 
 const TITLES_FR = `Traduisez le tableau JSON suivant de titres d’articles académiques en français. Conservez les noms d’auteurs, acronymes, noms de modèles et de jeux de données, chiffres et termes techniques. N’expliquez pas et n’ajoutez aucune note. Renvoyez uniquement un tableau JSON de chaînes traduites dans le même ordre, par exemple ["traduction 1","traduction 2"]. Sans balises Markdown ni autre texte.`;
 
-const SECTION_ZH = `你是学术论文译者。把用户给出的论文章节正文译成规范、通顺的学术中文。用户可能先给一行“SECTION: 节标题”，它只用于理解上下文，不要翻译、不要重复标题，也不要在译文开头加任何标题。保留公式、变量名、数字、引用标记（如 [12]、图 3、表 2）和专有名词，不增删信息，不写导语或解释。只输出正文译文。`;
+const SECTION_ZH = `你是学术论文译者。把用户给出的论文章节正文译成规范、通顺的学术中文。用户可能先给一行“SECTION: 节标题”，它只用于理解上下文，不要翻译、不要重复标题，也不要在译文开头加任何标题。原文中形如 ⟦M1a2b⟧ 的片段是公式占位符：必须逐字原样保留，不能翻译、改写、增删、拆分或补全；这些占位符会在显示时还原成原始公式。保留引用标记（如 [12]、图 3、表 2）和专有名词，不增删信息，不写导语或解释。只输出正文译文。`;
 
-const SECTION_FR = `Vous êtes traducteur d’articles académiques. Traduisez le corps de section fourni en français académique naturel. Une ligne « SECTION: titre » peut précéder le texte : elle sert uniquement de contexte, ne la traduisez pas, ne la répétez pas et n’ajoutez aucun titre au début. Conservez les formules, noms de variables, chiffres, appels de citation (par exemple [12], figure 3, tableau 2) et noms propres. N’ajoutez ni ne retirez aucune information, sans introduction ni commentaire. Renvoyez uniquement le texte traduit.`;
+const SECTION_FR = `Vous êtes traducteur d’articles académiques. Traduisez le corps de section fourni en français académique naturel. Une ligne « SECTION: titre » peut précéder le texte : elle sert uniquement de contexte, ne la traduisez pas, ne la répétez pas et n’ajoutez aucun titre au début. Les fragments de la forme ⟦M1a2b⟧ sont des espaces réservés aux formules : conservez-les exactement, sans les traduire, les modifier, les supprimer, les scinder ni les compléter ; ils seront remplacés par les formules d’origine à l’affichage. Conservez les appels de citation (par exemple [12], figure 3, tableau 2) et les noms propres. N’ajoutez ni ne retirez aucune information, sans introduction ni commentaire. Renvoyez uniquement le texte traduit.`;
 
 function stripFences(text = '') {
   return String(text)
@@ -246,7 +246,7 @@ export function createTranslator({ ctx, config, cache }) {
     const source = String(text || '').trim().slice(0, 8000);
     if (!source) throw new Error('这一节没有可翻译的正文。');
 
-    const key = digest(`section-v2\n${target}\n${route.provider}/${route.model}\n${headingText}\n${source}`);
+    const key = digest(`section-v3\n${target}\n${route.provider}/${route.model}\n${headingText}\n${source}`);
     const cached = cache.get(key);
     if (cached?.text) return { ...cached, cached: true };
 

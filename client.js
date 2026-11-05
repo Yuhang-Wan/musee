@@ -1578,7 +1578,7 @@ window.__ModuleLoader__.load({
         "reader.stop": "Stop",
         "reader.originalView": "Original",
         "reader.translatedView": "Translation",
-        "reader.translationNote": "Machine translation of the full text. Figures, tables, and equations stay in the original view.",
+        "reader.translationNote": "Machine translation of the full text; formulas are kept verbatim in their original notation. Figures, tables, and equations stay in the original view.",
         "reader.referencesOriginal": "References stay in the original view.",
         "reader.translateAllError": "Full-text translation stopped: {message}",
         "reader.translatePartial": "{count} sections are still untranslated. The rest is kept; click Translate full text again to retry them.",
@@ -1782,7 +1782,7 @@ window.__ModuleLoader__.load({
         "reader.stop": "停止",
         "reader.originalView": "原文",
         "reader.translatedView": "译文",
-        "reader.translationNote": "全文机器翻译；图、表、公式仍保留在原文视图。",
+        "reader.translationNote": "全文机器翻译；公式保留原文记号。图、表、公式仍以原文视图为准。",
         "reader.referencesOriginal": "参考文献保留在原文视图。",
         "reader.translateAllError": "全文翻译中断：{message}",
         "reader.translatePartial": "有 {count} 节没有完成，其余译文已保留；再点一次「翻译全文」只会重试这些章节。",
@@ -1986,7 +1986,7 @@ window.__ModuleLoader__.load({
         "reader.stop": "Arrêter",
         "reader.originalView": "Original",
         "reader.translatedView": "Traduction",
-        "reader.translationNote": "Traduction automatique du texte intégral. Les figures, tableaux et équations restent dans la vue originale.",
+        "reader.translationNote": "Traduction automatique du texte intégral ; les formules conservent leur notation d’origine. Les figures, tableaux et équations restent dans la vue originale.",
         "reader.referencesOriginal": "Les références restent dans la vue originale.",
         "reader.translateAllError": "Traduction interrompue : {message}",
         "reader.translatePartial": "{count} sections ne sont pas traduites. Le reste est conservé ; cliquez de nouveau sur « Traduire tout le texte » pour réessayer.",
@@ -4330,6 +4330,53 @@ window.__ModuleLoader__.load({
       }
       var purify_default = createDOMPurify();
 
+      // src/client/math.js
+      function splitChunks(text2, max = 4e3) {
+        const value = String(text2 || "").trim();
+        if (value.length <= max) return value ? [value] : [];
+        const chunks = [];
+        let rest = value;
+        while (rest.length > max) {
+          let cut = rest.lastIndexOf("\n\n", max);
+          if (cut < max * 0.5) cut = rest.lastIndexOf(". ", max);
+          if (cut < max * 0.5) cut = rest.lastIndexOf(" ", max);
+          if (cut < 1) cut = max;
+          chunks.push(rest.slice(0, cut).trim());
+          rest = rest.slice(cut).trim();
+        }
+        if (rest) chunks.push(rest);
+        return chunks;
+      }
+      function maskMath(text2) {
+        const values = /* @__PURE__ */ new Map();
+        const tokenFor = (value) => {
+          let hash2 = 0;
+          for (let index = 0; index < value.length; index += 1) hash2 = hash2 * 31 + value.charCodeAt(index) >>> 0;
+          let token = `⟦M${hash2.toString(36)}⟧`;
+          let suffix = 0;
+          while (values.has(token) && values.get(token) !== value) {
+            suffix += 1;
+            token = `⟦M${hash2.toString(36)}x${suffix}⟧`;
+          }
+          values.set(token, value);
+          return token;
+        };
+        let masked = String(text2 || "");
+        const patterns = [
+          /\$\$[\s\S]*?\$\$/g,
+          /\\\[[\s\S]*?\\\]/g,
+          /\\\([\s\S]*?\\\)/g,
+          /\$[^$\n]{1,400}\$/g,
+          /\\begin\{([a-zA-Z*]+)\}[\s\S]*?\\end\{\1\}/g,
+          /\\[a-zA-Z]+(?:(?:\s*\{[^{}]*\})|(?:\s*\^\{[^{}]*\})|(?:\s*_\{[^{}]*\})|(?:\s*[()\[\]0-9A-Za-z,+\-*/=._^]))*/g
+        ];
+        for (const pattern of patterns) masked = masked.replace(pattern, tokenFor);
+        return {
+          text: masked,
+          restore: (value = "") => String(value).replace(/⟦M[0-9a-z]+(?:x\d+)?⟧/g, (token) => values.get(token) ?? token)
+        };
+      }
+
       // src/client/reader.jsx
       purify_default.addHook("afterSanitizeAttributes", (node) => {
         if (node.tagName === "A" && String(node.getAttribute("href") || "").startsWith("http")) {
@@ -4425,22 +4472,6 @@ window.__ModuleLoader__.load({
         } catch {
           return null;
         }
-      }
-      function splitChunks(text2, max = 6e3) {
-        const value = String(text2 || "").trim();
-        if (value.length <= max) return value ? [value] : [];
-        const chunks = [];
-        let rest = value;
-        while (rest.length > max) {
-          let cut = rest.lastIndexOf("\n\n", max);
-          if (cut < max * 0.5) cut = rest.lastIndexOf(". ", max);
-          if (cut < max * 0.5) cut = rest.lastIndexOf(" ", max);
-          if (cut < 1) cut = max;
-          chunks.push(rest.slice(0, cut).trim());
-          rest = rest.slice(cut).trim();
-        }
-        if (rest) chunks.push(rest);
-        return chunks;
       }
       function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSaved, onUpdate }) {
         const [data, setData] = useState(null);
@@ -4599,36 +4630,51 @@ window.__ModuleLoader__.load({
           setViewMode("translated");
           const existing = { ...fullTranslations };
           const errors = {};
+          const states = /* @__PURE__ */ new Map();
+          const tasks = [];
+          for (const section of sections) {
+            if (existing[section.id]) continue;
+            const chunks = splitChunks(section.text, 4e3);
+            if (!chunks.length) continue;
+            states.set(section.id, { section, parts: new Array(chunks.length).fill(""), remaining: chunks.length, failed: false });
+            chunks.forEach((chunk, index) => tasks.push({ section, index, chunk }));
+          }
           let done = sections.filter((section) => existing[section.id]).length;
           setFullProgress({ done, total: sections.length, active: true });
-          let cursor = 0;
           const worker = async () => {
             while (!stopFullRef.current) {
-              const index = cursor;
-              cursor += 1;
-              if (index >= sections.length) return;
-              const section = sections[index];
-              if (existing[section.id]) continue;
+              const task = tasks.shift();
+              if (!task) return;
+              const record = states.get(task.section.id);
+              if (!record) continue;
               try {
-                const parts = [];
-                for (const chunk of splitChunks(section.text, 4e3)) {
-                  if (stopFullRef.current) break;
-                  const result = await api.translateSection(section.title, chunk, targetLang);
-                  parts.push(result.text);
-                }
-                if (!parts.length) throw new Error("这一节没有返回译文");
-                existing[section.id] = parts.join("\n\n");
-                setFullTranslations({ ...existing });
+                const masked = maskMath(task.chunk);
+                const result = await api.translateSection(task.section.title, masked.text, targetLang);
+                record.parts[task.index] = masked.restore(result.text);
               } catch (reason) {
-                errors[section.id] = reason?.message || String(reason);
+                record.failed = true;
+                errors[task.section.id] = reason?.message || String(reason);
                 setFullErrors({ ...errors });
-              } finally {
+              }
+              record.remaining -= 1;
+              if (record.remaining === 0) {
+                if (!record.failed) {
+                  const parts = record.parts.filter(Boolean);
+                  if (parts.length) {
+                    existing[task.section.id] = parts.join("\n\n");
+                    setFullTranslations({ ...existing });
+                  } else {
+                    record.failed = true;
+                    errors[task.section.id] = "这一节没有返回译文";
+                    setFullErrors({ ...errors });
+                  }
+                }
                 done += 1;
                 setFullProgress({ done, total: sections.length, active: !stopFullRef.current });
               }
             }
           };
-          await Promise.all([worker(), worker()]);
+          await Promise.all([worker(), worker(), worker(), worker()]);
           setFullProgress((current) => ({ ...current, active: false }));
           const failed = Object.keys(errors).length;
           if (failed) {
@@ -4645,8 +4691,9 @@ window.__ModuleLoader__.load({
           }
           setTranslating(true);
           try {
-            const result = await api.translateSection(activeSection.title, activeSection.text, targetLang);
-            setTranslation({ id: activeSection.id, title: activeSection.title, text: result.text });
+            const masked = maskMath(activeSection.text);
+            const result = await api.translateSection(activeSection.title, masked.text, targetLang);
+            setTranslation({ id: activeSection.id, title: activeSection.title, text: masked.restore(result.text) });
           } catch (reason) {
             setTranslation({ id: activeSection.id, title: activeSection.title, error: reason.message || String(reason) });
           } finally {

@@ -3,7 +3,7 @@
  * Source ids are OpenAlex `S...` identifiers resolved from each venue's ISSN or name.
  * Descriptions are original Musee scope notes, not publisher copy.
  */
-export const VERSION = '0.8.1';
+export const VERSION = '0.8.2';
 
 export const DISCIPLINES = [
   {

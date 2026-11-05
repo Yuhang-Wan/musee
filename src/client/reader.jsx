@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify';
 import { h, useEffect, useMemo, useRef, useState } from './react.js';
 import { api, tFormat } from './api.js';
+import { maskMath, splitChunks } from './math.js';
 import { Button, ErrorBanner, IconBack, IconExternal, Loading, Modal, Spinner } from './ui.jsx';
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
@@ -106,23 +107,6 @@ function rangeFromAnchor(blocks, anchor) {
   } catch {
     return null;
   }
-}
-
-function splitChunks(text, max = 6000) {
-  const value = String(text || '').trim();
-  if (value.length <= max) return value ? [value] : [];
-  const chunks = [];
-  let rest = value;
-  while (rest.length > max) {
-    let cut = rest.lastIndexOf('\n\n', max);
-    if (cut < max * 0.5) cut = rest.lastIndexOf('. ', max);
-    if (cut < max * 0.5) cut = rest.lastIndexOf(' ', max);
-    if (cut < 1) cut = max;
-    chunks.push(rest.slice(0, cut).trim());
-    rest = rest.slice(cut).trim();
-  }
-  if (rest) chunks.push(rest);
-  return chunks;
 }
 
 export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSaved, onUpdate }) {
@@ -298,36 +282,51 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
     setViewMode('translated');
     const existing = { ...fullTranslations };
     const errors = {};
+    const states = new Map();
+    const tasks = [];
+    for (const section of sections) {
+      if (existing[section.id]) continue;
+      const chunks = splitChunks(section.text, 4000);
+      if (!chunks.length) continue;
+      states.set(section.id, { section, parts: new Array(chunks.length).fill(''), remaining: chunks.length, failed: false });
+      chunks.forEach((chunk, index) => tasks.push({ section, index, chunk }));
+    }
     let done = sections.filter((section) => existing[section.id]).length;
     setFullProgress({ done, total: sections.length, active: true });
-    let cursor = 0;
     const worker = async () => {
       while (!stopFullRef.current) {
-        const index = cursor;
-        cursor += 1;
-        if (index >= sections.length) return;
-        const section = sections[index];
-        if (existing[section.id]) continue;
+        const task = tasks.shift();
+        if (!task) return;
+        const record = states.get(task.section.id);
+        if (!record) continue;
         try {
-          const parts = [];
-          for (const chunk of splitChunks(section.text, 4000)) {
-            if (stopFullRef.current) break;
-            const result = await api.translateSection(section.title, chunk, targetLang);
-            parts.push(result.text);
-          }
-          if (!parts.length) throw new Error('这一节没有返回译文');
-          existing[section.id] = parts.join('\n\n');
-          setFullTranslations({ ...existing });
+          const masked = maskMath(task.chunk);
+          const result = await api.translateSection(task.section.title, masked.text, targetLang);
+          record.parts[task.index] = masked.restore(result.text);
         } catch (reason) {
-          errors[section.id] = reason?.message || String(reason);
+          record.failed = true;
+          errors[task.section.id] = reason?.message || String(reason);
           setFullErrors({ ...errors });
-        } finally {
+        }
+        record.remaining -= 1;
+        if (record.remaining === 0) {
+          if (!record.failed) {
+            const parts = record.parts.filter(Boolean);
+            if (parts.length) {
+              existing[task.section.id] = parts.join('\n\n');
+              setFullTranslations({ ...existing });
+            } else {
+              record.failed = true;
+              errors[task.section.id] = '这一节没有返回译文';
+              setFullErrors({ ...errors });
+            }
+          }
           done += 1;
           setFullProgress({ done, total: sections.length, active: !stopFullRef.current });
         }
       }
     };
-    await Promise.all([worker(), worker()]);
+    await Promise.all([worker(), worker(), worker(), worker()]);
     setFullProgress((current) => ({ ...current, active: false }));
     const failed = Object.keys(errors).length;
     if (failed) {
@@ -346,8 +345,9 @@ export function Reader({ paper, item, t, targetLang, onBack, onPdf, onEnsureSave
     }
     setTranslating(true);
     try {
-      const result = await api.translateSection(activeSection.title, activeSection.text, targetLang);
-      setTranslation({ id: activeSection.id, title: activeSection.title, text: result.text });
+      const masked = maskMath(activeSection.text);
+      const result = await api.translateSection(activeSection.title, masked.text, targetLang);
+      setTranslation({ id: activeSection.id, title: activeSection.title, text: masked.restore(result.text) });
     } catch (reason) {
       setTranslation({ id: activeSection.id, title: activeSection.title, error: reason.message || String(reason) });
     } finally {

@@ -16,8 +16,10 @@ jobs:
       - name: Install build tooling
         working-directory: tools
         run: npm install --no-audit --no-fund
-      - name: Citation tests
-        run: node tools/test-cite.mjs
+      - name: Citation and math tests
+        run: |
+          node tools/test-cite.mjs
+          node tools/test-math.mjs
       - name: Build client bundle
         run: node tools/build.mjs
       - name: Syntax check
