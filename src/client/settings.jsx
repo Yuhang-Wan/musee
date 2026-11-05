@@ -16,6 +16,12 @@ export function SettingsDialog({ t, lang, onLang, targetLang, onTarget, translat
       h(
         'section',
         { className: 'musee-settings-section' },
+        h('h3', null, t('settings.appearance')),
+        h('p', { className: 'musee-settings-hint' }, t('settings.appearanceHint')),
+      ),
+      h(
+        'section',
+        { className: 'musee-settings-section' },
         h('h3', null, t('settings.language')),
         h('p', { className: 'musee-settings-hint' }, t('settings.languageHint')),
         h(

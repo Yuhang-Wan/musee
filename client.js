@@ -627,6 +627,7 @@ window.__ModuleLoader__.load({
     .musee-pdf-stage { display: flex; justify-content: center; min-height: 100%; }
     .musee-pdf-page {
       position: relative; flex: 0 0 auto; background: #fff;
+      color-scheme: light;
       box-shadow: 0 10px 34px rgba(15, 23, 42, .18);
     }
     .musee-pdf-canvas { position: absolute; inset: 0; display: block; }
@@ -677,7 +678,10 @@ window.__ModuleLoader__.load({
     /* Editorial direction: serif headlines, hairline rules, a dark lead visual. */
     .musee-root {
       --musee-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", SimSun, serif;
+      /* Mixing with the current label keeps the editorial red readable in both
+         DSH palettes without a separate Musee theme switch. */
       --musee-accent: #b42318;
+      --musee-accent: color-mix(in srgb, #b42318 72%, var(--dsw-alias-label-primary));
     }
     .musee-brand-name { font-family: var(--musee-serif); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
     .musee-tagline { text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }
@@ -1600,6 +1604,8 @@ window.__ModuleLoader__.load({
         "settings.title": "Settings",
         "settings.language": "Language",
         "settings.languageHint": "Changes the Musée panel only; it does not switch the whole app.",
+        "settings.appearance": "Appearance",
+        "settings.appearanceHint": "Musée follows DSH’s light, dark, or system appearance. There is no separate theme switch.",
         "settings.translation": "Translation language",
         "settings.translationHint": "Titles and abstracts are translated into this language.",
         "settings.titles": "Title translation",
@@ -1790,6 +1796,8 @@ window.__ModuleLoader__.load({
         "settings.title": "设置",
         "settings.language": "语言",
         "settings.languageHint": "只改变 Musée 面板，不切换整个应用的语言。",
+        "settings.appearance": "外观",
+        "settings.appearanceHint": "Musée 跟随 DSH 的浅色、深色或跟随系统设置，不单独维护主题开关。",
         "settings.translation": "翻译语言",
         "settings.translationHint": "标题与摘要会翻译成这个语言。",
         "settings.titles": "标题翻译",
@@ -1980,6 +1988,8 @@ window.__ModuleLoader__.load({
         "settings.title": "Paramètres",
         "settings.language": "Langue",
         "settings.languageHint": "Modifie uniquement le panneau Musée, pas toute l’application.",
+        "settings.appearance": "Apparence",
+        "settings.appearanceHint": "Musée suit l’apparence claire, sombre ou système de DSH. Aucun réglage de thème séparé.",
         "settings.translation": "Langue de traduction",
         "settings.translationHint": "Les titres et résumés sont traduits dans cette langue.",
         "settings.titles": "Traduction des titres",
@@ -2040,6 +2050,12 @@ window.__ModuleLoader__.load({
           h(
             "div",
             { className: "musee-settings" },
+            h(
+              "section",
+              { className: "musee-settings-section" },
+              h("h3", null, t("settings.appearance")),
+              h("p", { className: "musee-settings-hint" }, t("settings.appearanceHint"))
+            ),
             h(
               "section",
               { className: "musee-settings-section" },

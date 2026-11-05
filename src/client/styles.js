@@ -509,6 +509,7 @@ export const CSS = `
 .musee-pdf-stage { display: flex; justify-content: center; min-height: 100%; }
 .musee-pdf-page {
   position: relative; flex: 0 0 auto; background: #fff;
+  color-scheme: light;
   box-shadow: 0 10px 34px rgba(15, 23, 42, .18);
 }
 .musee-pdf-canvas { position: absolute; inset: 0; display: block; }
@@ -559,7 +560,10 @@ export const CSS = `
 /* Editorial direction: serif headlines, hairline rules, a dark lead visual. */
 .musee-root {
   --musee-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", SimSun, serif;
+  /* Mixing with the current label keeps the editorial red readable in both
+     DSH palettes without a separate Musee theme switch. */
   --musee-accent: #b42318;
+  --musee-accent: color-mix(in srgb, #b42318 72%, var(--dsw-alias-label-primary));
 }
 .musee-brand-name { font-family: var(--musee-serif); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .musee-tagline { text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }
