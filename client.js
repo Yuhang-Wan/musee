@@ -736,7 +736,7 @@ window.__ModuleLoader__.load({
         const exportWith = async (format, filename) => {
           try {
             await onExport(format, filename);
-            showToast(t("toast.updated"));
+            showToast(t("toast.exported"));
           } catch (error) {
             showToast(error.message);
           }
@@ -1341,6 +1341,7 @@ window.__ModuleLoader__.load({
         "toast.saved": "已加入我的库",
         "toast.removed": "已移出我的库",
         "toast.updated": "已保存",
+        "toast.exported": "已导出",
         "toast.translateFailed": "翻译失败：{message}",
         "error.noToken": "Musee 还没有就绪：请刷新页面后再试。",
         "error.refresh": "刷新页面",
@@ -1427,6 +1428,7 @@ window.__ModuleLoader__.load({
         "toast.saved": "Added to your library",
         "toast.removed": "Removed from your library",
         "toast.updated": "Saved",
+        "toast.exported": "Exported",
         "toast.translateFailed": "Translation failed: {message}",
         "error.noToken": "Musee is not ready: refresh the page and try again.",
         "error.refresh": "Refresh page",

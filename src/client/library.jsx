@@ -46,7 +46,7 @@ export function LibraryView({ items, t, onOpen, onRemove, onCite, onExport, show
   const exportWith = async (format, filename) => {
     try {
       await onExport(format, filename);
-      showToast(t('toast.updated'));
+      showToast(t('toast.exported'));
     } catch (error) {
       showToast(error.message);
     }

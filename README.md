@@ -28,7 +28,7 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 1. 克隆仓库并进入目录：
 
    ```powershell
-   git clone https://github.com/<your-name>/musee.git
+   git clone https://github.com/Yuhang-Wan/musee.git
    cd musee
    ```
 
