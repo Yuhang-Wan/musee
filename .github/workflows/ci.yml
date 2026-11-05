@@ -15,9 +15,7 @@ jobs:
           node-version: 22
       - name: Install build tooling
         working-directory: tools
-        run: |
-          corepack enable
-          pnpm install --node-linker=hoisted --frozen-lockfile
+        run: npm install --no-audit --no-fund
       - name: Citation tests
         run: node tools/test-cite.mjs
       - name: Build client bundle
