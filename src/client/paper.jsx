@@ -11,7 +11,7 @@ function shortAuthors(authors = []) {
   return `${authors.slice(0, 3).join(', ')} 等`;
 }
 
-export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenue = false }) {
+export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenue = false, showIssue = false, titleTranslations = {} }) {
   if (!papers.length) return h(Empty, { title: emptyTitle || t('empty') });
   return h(
     'div',
@@ -22,11 +22,14 @@ export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenu
         'button',
         { key: paper.id, type: 'button', className: 'musee-paper', onClick: () => onOpen(paper) },
         h('div', { className: 'musee-paper-title' }, paper.title),
+        titleTranslations[paper.id] ? h('div', { className: 'musee-paper-title-alt' }, titleTranslations[paper.id]) : null,
         h(
           'div',
           { className: 'musee-paper-meta' },
           paper.kind === 'conference' ? h(Pill, { tone: 'brand' }, t('paper.conference')) : null,
           !hideVenue && paper.journal?.name ? h('span', null, paper.journal.name) : paper.source === 'arxiv' ? h(Pill, { tone: 'brand' }, 'arXiv') : null,
+          showIssue && paper.volume ? h('span', null, `${t('paper.volume')} ${paper.volume}`) : null,
+          showIssue && paper.issue ? h('span', null, `${t('paper.issue')} ${paper.issue}`) : null,
           paper.year ? h('span', null, String(paper.year)) : null,
           paper.authors?.length ? h('span', null, shortAuthors(paper.authors)) : null,
           paper.openAccess ? h(Pill, { tone: 'success' }, t('paper.oa')) : null,
@@ -38,7 +41,7 @@ export function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenu
   );
 }
 
-export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite }) {
+export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation }) {
   const [mode, setMode] = useState('both');
   const [note, setNote] = useState('');
   const [tags, setTags] = useState('');
@@ -123,6 +126,7 @@ export function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTransl
 
     h('h1', null, showTranslated && translation?.title ? translation.title : title),
     showTranslated && translation?.title && mode === 'both' ? h('div', { className: 'translated-title' }, title) : null,
+    titleTranslation && !hasTranslation && !showTranslated ? h('div', { className: 'musee-title-alt' }, titleTranslation) : null,
 
     paper.authors?.length ? h('div', { className: 'musee-authors' }, paper.authors.join(' · ')) : null,
 

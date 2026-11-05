@@ -5,7 +5,7 @@ import path from 'node:path';
 import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, VERSION, journalsFor } from './catalog.js';
 import { latestByCategory } from './arxiv.js';
 import { cite } from './cite.js';
-import { fetchSource, searchWorks, worksBySource } from './openalex.js';
+import { fetchSource, searchWorks, worksBySource, worksBySourcePage, yearCounts } from './openalex.js';
 import { createStore } from './store.js';
 import { createTranslator } from './translate.js';
 import { TtlCache } from './util.js';
@@ -131,11 +131,16 @@ export function createMusee(ctx, config = {}) {
       if (!journal) return json({ error: '未知的期刊。' }, 404);
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 20, 1), 50);
       const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
-      const [papers, source] = await Promise.all([
-        cache.wrap(`journal:${journalId}:${limit}:${offset}`, () => worksBySource(journal.openalex, { limit, offset, mailto })),
+      const yearParam = url.searchParams.get('year') || '';
+      const year = /^\d{4}$/.test(yearParam) ? Number(yearParam) : null;
+      const [source, years] = await Promise.all([
         sourceCache.wrap(`source:${journal.openalex}`, () => fetchSource(journal.openalex, { mailto })).catch(() => null),
+        cache.wrap(`years:${journal.openalex}`, () => yearCounts(journal.openalex, { mailto })).catch(() => []),
       ]);
-      return json({ journal, source, papers });
+      const page = await cache.wrap(`journal:${journalId}:${limit}:${offset}:${year || 'all'}`, () =>
+        worksBySourcePage(journal.openalex, { limit, offset, year, mailto }),
+      );
+      return json({ journal, source, years, year, total: page.total, papers: page.papers });
     }
 
     if (pathname === '/conference') {
@@ -173,6 +178,16 @@ export function createMusee(ctx, config = {}) {
       if (!title && !abstract) return json({ error: '没有可翻译的内容。' }, 400);
       const result = await translator.translate({ title, abstract, lang });
       return json(result);
+    }
+
+    if (pathname === '/translate-titles' && request.method === 'POST') {
+      const body = await request.json();
+      const titles = Array.isArray(body.titles)
+        ? body.titles.slice(0, 30).map((title) => String(title || '').slice(0, 500))
+        : [];
+      if (!titles.some((title) => title.trim())) return json({ error: '没有可翻译的标题。' }, 400);
+      const lang = body.lang === 'fr' ? 'fr' : 'zh';
+      return json(await translator.translateTitles(titles, lang));
     }
 
     if (pathname === '/library') {

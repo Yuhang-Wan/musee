@@ -27,6 +27,10 @@ export const EN = {
   'journal.works': '{n} works indexed',
   'journal.oa': 'Open access',
   'journal.latest': 'Latest issue',
+  'journal.papers': 'Papers',
+  'journal.allYears': 'All years',
+  'journal.total': '{n} papers',
+  'journal.loadMore': 'Load more',
   'paper.back': 'Back to list',
   'paper.translate': 'Academic translation',
   'paper.translating': 'Translating…',
@@ -108,6 +112,9 @@ export const EN = {
   'settings.languageHint': 'Changes the Musee panel only; it does not switch the whole app.',
   'settings.translation': 'Translation language',
   'settings.translationHint': 'Titles and abstracts are translated into this language.',
+  'settings.titles': 'Title translation',
+  'settings.titlesHint': 'Translates paper titles in lists into the translation language. Calls your model once per batch and caches the result.',
+  'settings.titlesToggle': 'Translate paper titles automatically',
   'settings.about': 'About',
   'settings.version': 'Version',
   'settings.dataDir': 'Local data',
@@ -141,6 +148,10 @@ export const ZH = {
   'journal.works': '收录 {n} 篇',
   'journal.oa': '开放获取',
   'journal.latest': '最新一期',
+  'journal.papers': '论文',
+  'journal.allYears': '全部年份',
+  'journal.total': '共 {n} 篇',
+  'journal.loadMore': '加载更多',
   'paper.back': '返回列表',
   'paper.translate': '学术翻译',
   'paper.translating': '正在翻译…',
@@ -222,6 +233,9 @@ export const ZH = {
   'settings.languageHint': '只改变 Musee 面板，不切换整个应用的语言。',
   'settings.translation': '翻译语言',
   'settings.translationHint': '标题与摘要会翻译成这个语言。',
+  'settings.titles': '标题翻译',
+  'settings.titlesHint': '在论文列表中把标题自动译成翻译语言；每批调用一次模型，结果会缓存。',
+  'settings.titlesToggle': '自动翻译论文标题',
   'settings.about': '关于',
   'settings.version': '版本',
   'settings.dataDir': '本地数据目录',
@@ -255,6 +269,10 @@ export const FR = {
   'journal.works': '{n} travaux indexés',
   'journal.oa': 'Libre accès',
   'journal.latest': 'Dernier numéro',
+  'journal.papers': 'Articles',
+  'journal.allYears': 'Toutes les années',
+  'journal.total': '{n} articles',
+  'journal.loadMore': 'Charger plus',
   'paper.back': 'Retour à la liste',
   'paper.translate': 'Traduction académique',
   'paper.translating': 'Traduction en cours…',
@@ -336,6 +354,9 @@ export const FR = {
   'settings.languageHint': 'Modifie uniquement le panneau Musee, pas toute l’application.',
   'settings.translation': 'Langue de traduction',
   'settings.translationHint': 'Les titres et résumés sont traduits dans cette langue.',
+  'settings.titles': 'Traduction des titres',
+  'settings.titlesHint': 'Traduit automatiquement les titres dans les listes. Un appel de modèle par lot, résultat mis en cache.',
+  'settings.titlesToggle': 'Traduire automatiquement les titres',
   'settings.about': 'À propos',
   'settings.version': 'Version',
   'settings.dataDir': 'Données locales',
@@ -374,4 +395,15 @@ export function readStoredTarget(lang) {
     /* ignore */
   }
   return lang === 'fr' ? 'fr' : 'zh';
+}
+
+export function readStoredTitles(lang) {
+  try {
+    const stored = localStorage.getItem('musee.titles');
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+  } catch {
+    /* ignore */
+  }
+  return lang !== 'en';
 }

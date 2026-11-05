@@ -1,7 +1,7 @@
 import { h, useEffect, useMemo, useRef, useState } from './react.js';
 import { api, downloadExport, tFormat } from './api.js';
 import { CSS } from './styles.js';
-import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, IconSettings, Loading, Pill } from './ui.jsx';
+import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, IconSettings, Loading, Pill, Spinner } from './ui.jsx';
 import { PaperDetail, PaperList } from './paper.jsx';
 import { LibraryView } from './library.jsx';
 import { CitationDialog } from './citation.jsx';
@@ -35,7 +35,7 @@ function issueLabel(paper) {
   return [volume, issue, paper.year].filter(Boolean).join(' ');
 }
 
-export function App({ t, lang, setLang, targetLang, setTargetLang }) {
+export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles }) {
   const [boot, setBoot] = useState(null);
   const [bootError, setBootError] = useState('');
   const [discipline, setDiscipline] = useState('urban');
@@ -45,6 +45,11 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
   const [listState, setListState] = useState('idle');
   const [listError, setListError] = useState('');
   const [listTitle, setListTitle] = useState('');
+  const [journalYears, setJournalYears] = useState([]);
+  const [journalTotal, setJournalTotal] = useState(0);
+  const [journalYear, setJournalYear] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [titleTranslations, setTitleTranslations] = useState({});
   const [library, setLibrary] = useState([]);
   const [translation, setTranslation] = useState(null);
   const [translating, setTranslating] = useState(false);
@@ -56,6 +61,9 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
   const mainRef = useRef(null);
   const toastTimer = useRef(null);
   const translationsRef = useRef(new Map());
+  const titleCacheRef = useRef(new Map());
+  const titlePendingRef = useRef(new Set());
+  const journalOffsetRef = useRef(0);
   const listRetryRef = useRef(null);
 
   const showToast = (message) => {
@@ -91,6 +99,53 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
   const libraryById = useMemo(() => new Map(library.map((item) => [item.id, item])), [library]);
   const currentDiscipline = boot?.disciplines.find((entry) => entry.id === discipline) || null;
 
+  const autoTranslateTitles = (list) => {
+    if (!translateTitles || lang === 'en' || !boot?.llm || !Array.isArray(list)) return;
+    const additions = {};
+    const pending = [];
+    for (const paper of list) {
+      if (!paper?.title) continue;
+      const key = `${targetLang}|${paper.title}`;
+      const cached = titleCacheRef.current.get(key);
+      if (cached) {
+        additions[paper.id] = cached;
+        continue;
+      }
+      if (titlePendingRef.current.has(key)) continue;
+      titlePendingRef.current.add(key);
+      pending.push({ id: paper.id, title: paper.title, key });
+    }
+    if (Object.keys(additions).length) {
+      setTitleTranslations((prev) => ({ ...prev, ...additions }));
+    }
+    if (!pending.length) return;
+    api
+      .translateTitles(pending.map((entry) => entry.title), targetLang)
+      .then((data) => {
+        const fresh = {};
+        (data.translations || []).forEach((text, index) => {
+          const entry = pending[index];
+          if (!entry || !text) return;
+          titleCacheRef.current.set(entry.key, text);
+          fresh[entry.id] = text;
+        });
+        if (Object.keys(fresh).length) setTitleTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        for (const entry of pending) titlePendingRef.current.delete(entry.key);
+      });
+  };
+
+  useEffect(() => {
+    setTitleTranslations({});
+  }, [lang, targetLang, translateTitles]);
+
+  useEffect(() => {
+    if (!translateTitles || lang === 'en') return;
+    autoTranslateTitles(papers);
+  }, [papers, lang, targetLang, translateTitles, boot?.llm]);
+
   const scrollTop = () => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   };
@@ -113,11 +168,41 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
       });
   };
 
-  const openJournal = (journal) => {
+  const loadJournal = (journal, year = null, append = false) => {
     setView({ kind: 'journal', journal });
     setSourceInfo(null);
-    loadList(() => api.journal(journal.id), journal.name, (data) => setSourceInfo(data.source || null));
+    setListTitle(journal.name);
+    setJournalYear(year);
+    setListError('');
+    listRetryRef.current = () => loadJournal(journal, year, false);
+    if (!append) {
+      setPapers([]);
+      setListState('loading');
+      scrollTop();
+    } else {
+      setLoadingMore(true);
+    }
+    const limit = 20;
+    const offset = append ? journalOffsetRef.current : 0;
+    api
+      .journal(journal.id, { limit, offset, year })
+      .then((data) => {
+        journalOffsetRef.current = offset + limit;
+        setPapers((prev) => (append ? [...prev, ...(data.papers || [])] : data.papers || []));
+        setSourceInfo(data.source || null);
+        setJournalYears(data.years || []);
+        setJournalTotal(data.total || 0);
+        setListState('ready');
+        autoTranslateTitles(data.papers || []);
+      })
+      .catch((error) => {
+        setListError(errorText(error));
+        setListState('error');
+      })
+      .finally(() => setLoadingMore(false));
   };
+
+  const openJournal = (journal) => loadJournal(journal, null, false);
 
   const openConference = (conference) => {
     setView({ kind: 'conference', conference });
@@ -212,7 +297,16 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
   const renderList = () => {
     if (listState === 'loading') return h(Loading, { label: t('loading') });
     if (listState === 'error') return h(ErrorBanner, { message: listError, onRetry: listRetryRef.current, retryLabel: t('error.retry') });
-    return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t('empty'), hideVenue: view.kind === 'conference' });
+    return h(PaperList, {
+      papers,
+      onOpen: openPaper,
+      libraryById,
+      t,
+      emptyTitle: t('empty'),
+      hideVenue: view.kind === 'conference' || view.kind === 'journal',
+      showIssue: view.kind === 'journal',
+      titleTranslations,
+    });
   };
 
   const renderVenueHead = (venue, kind, options = {}) => {
@@ -366,6 +460,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
         onTranslate: translatePaper,
         translation,
         translating,
+        titleTranslation: titleTranslations[view.paper.id],
         onCite: (items) => setCitation({ papers: items }),
       });
     }
@@ -408,8 +503,40 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
           isOa: sourceInfo?.isOa,
           homepage: sourceInfo?.homepage,
         }),
-        h('div', { className: 'musee-section-head', style: { marginTop: '20px' } }, h('h2', null, t('journal.latest'))),
+        h('div', { className: 'musee-section-head', style: { marginTop: '20px', gap: '12px', flexWrap: 'wrap' } },
+          h('h2', null, journalYear ? String(journalYear) : t('journal.papers')),
+          journalTotal ? h('span', null, tr(t, 'journal.total', { n: journalTotal.toLocaleString() })) : null,
+          h('div', { style: { flex: 1 } }),
+          journalYears.length
+            ? h(
+                'select',
+                {
+                  className: 'musee-select',
+                  style: { width: 'auto' },
+                  value: journalYear ?? '',
+                  'aria-label': t('journal.allYears'),
+                  onChange: (event) => loadJournal(view.journal, event.target.value ? Number(event.target.value) : null, false),
+                },
+                h('option', { value: '' }, t('journal.allYears')),
+                journalYears.map((entry) =>
+                  h('option', { key: entry.year, value: String(entry.year) }, `${entry.year} (${entry.count})`),
+                ),
+              )
+            : null,
+        ),
         renderList(),
+        listState === 'ready' && papers.length < journalTotal
+          ? h(
+              'div',
+              { style: { display: 'flex', justifyContent: 'center', marginTop: '16px' } },
+              h(
+                Button,
+                { onClick: () => loadJournal(view.journal, journalYear, true), disabled: loadingMore },
+                loadingMore ? h(Spinner) : null,
+                `${t('journal.loadMore')} ${papers.length}/${journalTotal}`,
+              ),
+            )
+          : null,
       );
     }
 
@@ -588,6 +715,8 @@ export function App({ t, lang, setLang, targetLang, setTargetLang }) {
           onLang: setLang,
           targetLang,
           onTarget: setTargetLang,
+          translateTitles,
+          onTranslateTitles: setTranslateTitles,
           version: boot.version,
           dataDir: boot.dataDir,
           onClose: () => setSettingsOpen(false),

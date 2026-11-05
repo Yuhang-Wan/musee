@@ -2,7 +2,7 @@ import { h } from './react.js';
 import { LANGUAGES } from './i18n.js';
 import { Button, Modal } from './ui.jsx';
 
-export function SettingsDialog({ t, lang, onLang, targetLang, onTarget, version, dataDir, onClose }) {
+export function SettingsDialog({ t, lang, onLang, targetLang, onTarget, translateTitles, onTranslateTitles, version, dataDir, onClose }) {
   return h(
     Modal,
     {
@@ -62,6 +62,22 @@ export function SettingsDialog({ t, lang, onLang, targetLang, onTarget, version,
               label,
             ),
           ),
+        ),
+      ),
+      h(
+        'section',
+        { className: 'musee-settings-section' },
+        h('h3', null, t('settings.titles')),
+        h('p', { className: 'musee-settings-hint' }, t('settings.titlesHint')),
+        h(
+          'label',
+          { className: 'musee-check-row' },
+          h('input', {
+            type: 'checkbox',
+            checked: Boolean(translateTitles),
+            onChange: (event) => onTranslateTitles(event.target.checked),
+          }),
+          h('span', null, t('settings.titlesToggle')),
         ),
       ),
       h(

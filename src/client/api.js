@@ -51,11 +51,16 @@ async function request(path, options = {}) {
 export const api = {
   bootstrap: () => request('/bootstrap'),
   library: () => request('/library'),
-  journal: (journalId, limit = 20) => request(`/journal?journalId=${encodeURIComponent(journalId)}&limit=${limit}`),
+  journal: (journalId, { limit = 20, offset = 0, year = null } = {}) => {
+    const params = new URLSearchParams({ journalId, limit: String(limit), offset: String(offset) });
+    if (year) params.set('year', String(year));
+    return request(`/journal?${params.toString()}`);
+  },
   conference: (conferenceId, limit = 20) => request(`/conference?conferenceId=${encodeURIComponent(conferenceId)}&limit=${limit}`),
   arxiv: (category, limit = 20) => request(`/arxiv?category=${encodeURIComponent(category)}&limit=${limit}`),
   search: (query, limit = 20) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
   translate: (title, abstract, lang) => request('/translate', { method: 'POST', body: { title, abstract, lang } }),
+  translateTitles: (titles, lang) => request('/translate-titles', { method: 'POST', body: { titles, lang } }),
   save: (paper) => request('/library', { method: 'POST', body: { action: 'save', paper } }),
   update: (id, patch) => request('/library', { method: 'POST', body: { action: 'update', id, patch } }),
   remove: (id) => request('/library', { method: 'POST', body: { action: 'remove', id } }),

@@ -83,9 +83,11 @@ function worksUrl(params) {
   return url.toString();
 }
 
-export async function worksBySource(sourceId, { limit = 20, offset = 0, mailto = '' } = {}) {
+export async function worksBySourcePage(sourceId, { limit = 20, offset = 0, year = null, mailto = '' } = {}) {
+  const filters = [`primary_location.source.id:${sourceId}`];
+  if (year) filters.push(`publication_year:${year}`);
   const url = worksUrl({
-    filter: `primary_location.source.id:${sourceId}`,
+    filter: filters.join(','),
     sort: 'publication_date:desc',
     'per-page': Math.min(Math.max(limit, 1), 50),
     page: Math.max(Math.floor(offset / Math.max(limit, 1)) + 1, 1),
@@ -93,7 +95,28 @@ export async function worksBySource(sourceId, { limit = 20, offset = 0, mailto =
     mailto,
   });
   const data = await fetchJson(url);
-  return (data.results || []).map(normalizeWork).filter((paper) => paper.title);
+  return {
+    papers: (data.results || []).map(normalizeWork).filter((paper) => paper.title),
+    total: data.meta?.count || 0,
+  };
+}
+
+export async function worksBySource(sourceId, options = {}) {
+  const page = await worksBySourcePage(sourceId, options);
+  return page.papers;
+}
+
+export async function yearCounts(sourceId, { mailto = '' } = {}) {
+  const url = worksUrl({
+    filter: `primary_location.source.id:${sourceId}`,
+    group_by: 'publication_year',
+    mailto,
+  });
+  const data = await fetchJson(url);
+  return (data.group_by || [])
+    .map((group) => ({ year: Number(group.key), count: group.count || 0 }))
+    .filter((entry) => Number.isFinite(entry.year) && entry.year > 0)
+    .sort((a, b) => b.year - a.year);
 }
 
 export async function fetchSource(sourceId, { mailto = '' } = {}) {

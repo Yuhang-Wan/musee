@@ -1,11 +1,12 @@
 import { h, useMemo, useState } from './react.js';
 import { App } from './app.jsx';
-import { makeT, readStoredLang, readStoredTarget } from './i18n.js';
+import { makeT, readStoredLang, readStoredTarget, readStoredTitles } from './i18n.js';
 
 function createPanel(ctx) {
   return function MuseePanel() {
     const [lang, setLangState] = useState(() => readStoredLang(ctx));
     const [targetLang, setTargetLangState] = useState(() => readStoredTarget(readStoredLang(ctx)));
+    const [translateTitles, setTranslateTitlesState] = useState(() => readStoredTitles(readStoredLang(ctx)));
     const t = useMemo(() => makeT(lang), [lang]);
 
     const setLang = (next) => {
@@ -15,6 +16,12 @@ function createPanel(ctx) {
         /* ignore unavailable storage */
       }
       setLangState(next);
+      try {
+        // Until the reader picks a translation language explicitly, follow the UI language.
+        if (!localStorage.getItem('musee.target')) setTargetLangState(next === 'fr' ? 'fr' : 'zh');
+      } catch {
+        /* ignore unavailable storage */
+      }
     };
     const setTargetLang = (next) => {
       try {
@@ -24,8 +31,16 @@ function createPanel(ctx) {
       }
       setTargetLangState(next);
     };
+    const setTranslateTitles = (next) => {
+      try {
+        localStorage.setItem('musee.titles', next ? '1' : '0');
+      } catch {
+        /* ignore unavailable storage */
+      }
+      setTranslateTitlesState(next);
+    };
 
-    return h(App, { t, lang, setLang, targetLang, setTargetLang });
+    return h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles });
   };
 }
 

@@ -141,8 +141,9 @@ export function IconClose({ size = 15 }) {
 export function IconSettings({ size = 16 }) {
   return h(
     'svg',
-    { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' },
-    h('circle', { cx: 12, cy: 12, r: 3.2 }),
-    h('path', { d: 'M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1' }),
+    { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', 'aria-hidden': 'true' },
+    h('path', { d: 'M4 7h9M17 7h3M4 17h3M11 17h9' }),
+    h('circle', { cx: 15, cy: 7, r: 2.2 }),
+    h('circle', { cx: 9, cy: 17, r: 2.2 }),
   );
 }

@@ -127,6 +127,8 @@ export const CSS = `
 }
 .musee-paper:hover { border-color: var(--dsw-alias-border-l2); }
 .musee-paper-title { font-weight: 600; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.musee-paper-title-alt { margin-top: 4px; font-size: 13px; line-height: 1.55; color: var(--dsw-alias-label-secondary); }
+.musee-title-alt { margin: 6px 0 12px; font-size: 16px; line-height: 1.6; color: var(--dsw-alias-label-secondary); }
 .musee-paper-meta { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--dsw-alias-label-secondary); font-size: 12px; }
 
 .musee-pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; font-size: 11px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
@@ -372,6 +374,9 @@ export const CSS = `
 .musee-settings-meta { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 10px; font-size: 12px; }
 .musee-settings-meta dt { color: var(--dsw-alias-label-secondary); }
 .musee-settings-meta dd { margin: 0; word-break: break-all; }
+
+.musee-check-row { display: flex; align-items: center; gap: 9px; font-size: 13px; cursor: pointer; }
+.musee-check-row input { width: 15px; height: 15px; margin: 0; accent-color: var(--dsw-alias-brand-primary); cursor: pointer; }
 
 .musee-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;

@@ -12,6 +12,8 @@ Musee 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 
 - **三个学科，32 本期刊**：城市研究、物理、人工智能与机器人；期刊目录内置 ISSN 与 OpenAlex source id。
 - **图文期刊卡片**：每本期刊有原创排版封面（随学科变色的书脊设计）、Musee 撰写的范围简介、ISSN 与收录量；详情页显示最新一卷/期。
+- **往期浏览**：期刊页可按年份筛选（带每年篇数）、显示总篇数与卷/期，底部「加载更多」逐页翻看历史论文。
+- **标题翻译**：论文列表自动把标题批量译成当前翻译语言，缓存在本地；设置里可一键关闭，关闭后不再调用模型。
 - **顶会论文**：NeurIPS、CVPR、ICCV、AAAI、IJCAI、ACL、EMNLP、KDD、ICRA、IROS、RSS，来自 OpenAlex 会议论文集。
 - **arXiv 预印本**：按 `cs.RO`、`cs.AI`、`quant-ph`、`hep-th`、`physics.soc-ph` 等分类看最新提交。
 - **学术翻译**：调用你已配置的模型，按“标题 + 摘要 + 学术语体 + 术语一致”的提示词翻译成中文或法语；结果按内容哈希缓存，重复阅读不重复计费。

@@ -58,11 +58,16 @@ window.__ModuleLoader__.load({
       var api = {
         bootstrap: () => request("/bootstrap"),
         library: () => request("/library"),
-        journal: (journalId, limit = 20) => request(`/journal?journalId=${encodeURIComponent(journalId)}&limit=${limit}`),
+        journal: (journalId, { limit = 20, offset = 0, year = null } = {}) => {
+          const params = new URLSearchParams({ journalId, limit: String(limit), offset: String(offset) });
+          if (year) params.set("year", String(year));
+          return request(`/journal?${params.toString()}`);
+        },
         conference: (conferenceId, limit = 20) => request(`/conference?conferenceId=${encodeURIComponent(conferenceId)}&limit=${limit}`),
         arxiv: (category, limit = 20) => request(`/arxiv?category=${encodeURIComponent(category)}&limit=${limit}`),
         search: (query, limit = 20) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
         translate: (title, abstract, lang) => request("/translate", { method: "POST", body: { title, abstract, lang } }),
+        translateTitles: (titles, lang) => request("/translate-titles", { method: "POST", body: { titles, lang } }),
         save: (paper) => request("/library", { method: "POST", body: { action: "save", paper } }),
         update: (id, patch) => request("/library", { method: "POST", body: { action: "update", id, patch } }),
         remove: (id) => request("/library", { method: "POST", body: { action: "remove", id } }),
@@ -222,6 +227,8 @@ window.__ModuleLoader__.load({
     }
     .musee-paper:hover { border-color: var(--dsw-alias-border-l2); }
     .musee-paper-title { font-weight: 600; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .musee-paper-title-alt { margin-top: 4px; font-size: 13px; line-height: 1.55; color: var(--dsw-alias-label-secondary); }
+    .musee-title-alt { margin: 6px 0 12px; font-size: 16px; line-height: 1.6; color: var(--dsw-alias-label-secondary); }
     .musee-paper-meta { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--dsw-alias-label-secondary); font-size: 12px; }
 
     .musee-pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; font-size: 11px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
@@ -468,6 +475,9 @@ window.__ModuleLoader__.load({
     .musee-settings-meta dt { color: var(--dsw-alias-label-secondary); }
     .musee-settings-meta dd { margin: 0; word-break: break-all; }
 
+    .musee-check-row { display: flex; align-items: center; gap: 9px; font-size: 13px; cursor: pointer; }
+    .musee-check-row input { width: 15px; height: 15px; margin: 0; accent-color: var(--dsw-alias-brand-primary); cursor: pointer; }
+
     .musee-icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 30px; height: 30px; border: 1px solid transparent; border-radius: 8px;
@@ -617,9 +627,10 @@ window.__ModuleLoader__.load({
       function IconSettings({ size = 16 }) {
         return h(
           "svg",
-          { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
-          h("circle", { cx: 12, cy: 12, r: 3.2 }),
-          h("path", { d: "M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" })
+          { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", "aria-hidden": "true" },
+          h("path", { d: "M4 7h9M17 7h3M4 17h3M11 17h9" }),
+          h("circle", { cx: 15, cy: 7, r: 2.2 }),
+          h("circle", { cx: 9, cy: 17, r: 2.2 })
         );
       }
 
@@ -631,7 +642,7 @@ window.__ModuleLoader__.load({
         if (authors.length <= 3) return authors.join(", ");
         return `${authors.slice(0, 3).join(", ")} 等`;
       }
-      function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenue = false }) {
+      function PaperList({ papers, onOpen, libraryById, t, emptyTitle, hideVenue = false, showIssue = false, titleTranslations = {} }) {
         if (!papers.length) return h(Empty, { title: emptyTitle || t("empty") });
         return h(
           "div",
@@ -642,11 +653,14 @@ window.__ModuleLoader__.load({
               "button",
               { key: paper.id, type: "button", className: "musee-paper", onClick: () => onOpen(paper) },
               h("div", { className: "musee-paper-title" }, paper.title),
+              titleTranslations[paper.id] ? h("div", { className: "musee-paper-title-alt" }, titleTranslations[paper.id]) : null,
               h(
                 "div",
                 { className: "musee-paper-meta" },
                 paper.kind === "conference" ? h(Pill, { tone: "brand" }, t("paper.conference")) : null,
                 !hideVenue && paper.journal?.name ? h("span", null, paper.journal.name) : paper.source === "arxiv" ? h(Pill, { tone: "brand" }, "arXiv") : null,
+                showIssue && paper.volume ? h("span", null, `${t("paper.volume")} ${paper.volume}`) : null,
+                showIssue && paper.issue ? h("span", null, `${t("paper.issue")} ${paper.issue}`) : null,
                 paper.year ? h("span", null, String(paper.year)) : null,
                 paper.authors?.length ? h("span", null, shortAuthors(paper.authors)) : null,
                 paper.openAccess ? h(Pill, { tone: "success" }, t("paper.oa")) : null,
@@ -657,7 +671,7 @@ window.__ModuleLoader__.load({
           })
         );
       }
-      function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite }) {
+      function PaperDetail({ paper, item, t, onBack, onSave, onUpdate, onTranslate, translation, translating, onCite, titleTranslation }) {
         const [mode, setMode] = useState("both");
         const [note, setNote] = useState("");
         const [tags, setTags] = useState("");
@@ -729,6 +743,7 @@ window.__ModuleLoader__.load({
           ) : null,
           h("h1", null, showTranslated && translation?.title ? translation.title : title),
           showTranslated && translation?.title && mode === "both" ? h("div", { className: "translated-title" }, title) : null,
+          titleTranslation && !hasTranslation && !showTranslated ? h("div", { className: "musee-title-alt" }, titleTranslation) : null,
           paper.authors?.length ? h("div", { className: "musee-authors" }, paper.authors.join(" · ")) : null,
           h(
             "div",
@@ -1141,6 +1156,10 @@ window.__ModuleLoader__.load({
         "journal.works": "{n} works indexed",
         "journal.oa": "Open access",
         "journal.latest": "Latest issue",
+        "journal.papers": "Papers",
+        "journal.allYears": "All years",
+        "journal.total": "{n} papers",
+        "journal.loadMore": "Load more",
         "paper.back": "Back to list",
         "paper.translate": "Academic translation",
         "paper.translating": "Translating…",
@@ -1222,6 +1241,9 @@ window.__ModuleLoader__.load({
         "settings.languageHint": "Changes the Musee panel only; it does not switch the whole app.",
         "settings.translation": "Translation language",
         "settings.translationHint": "Titles and abstracts are translated into this language.",
+        "settings.titles": "Title translation",
+        "settings.titlesHint": "Translates paper titles in lists into the translation language. Calls your model once per batch and caches the result.",
+        "settings.titlesToggle": "Translate paper titles automatically",
         "settings.about": "About",
         "settings.version": "Version",
         "settings.dataDir": "Local data",
@@ -1254,6 +1276,10 @@ window.__ModuleLoader__.load({
         "journal.works": "收录 {n} 篇",
         "journal.oa": "开放获取",
         "journal.latest": "最新一期",
+        "journal.papers": "论文",
+        "journal.allYears": "全部年份",
+        "journal.total": "共 {n} 篇",
+        "journal.loadMore": "加载更多",
         "paper.back": "返回列表",
         "paper.translate": "学术翻译",
         "paper.translating": "正在翻译…",
@@ -1335,6 +1361,9 @@ window.__ModuleLoader__.load({
         "settings.languageHint": "只改变 Musee 面板，不切换整个应用的语言。",
         "settings.translation": "翻译语言",
         "settings.translationHint": "标题与摘要会翻译成这个语言。",
+        "settings.titles": "标题翻译",
+        "settings.titlesHint": "在论文列表中把标题自动译成翻译语言；每批调用一次模型，结果会缓存。",
+        "settings.titlesToggle": "自动翻译论文标题",
         "settings.about": "关于",
         "settings.version": "版本",
         "settings.dataDir": "本地数据目录",
@@ -1367,6 +1396,10 @@ window.__ModuleLoader__.load({
         "journal.works": "{n} travaux indexés",
         "journal.oa": "Libre accès",
         "journal.latest": "Dernier numéro",
+        "journal.papers": "Articles",
+        "journal.allYears": "Toutes les années",
+        "journal.total": "{n} articles",
+        "journal.loadMore": "Charger plus",
         "paper.back": "Retour à la liste",
         "paper.translate": "Traduction académique",
         "paper.translating": "Traduction en cours…",
@@ -1448,6 +1481,9 @@ window.__ModuleLoader__.load({
         "settings.languageHint": "Modifie uniquement le panneau Musee, pas toute l’application.",
         "settings.translation": "Langue de traduction",
         "settings.translationHint": "Les titres et résumés sont traduits dans cette langue.",
+        "settings.titles": "Traduction des titres",
+        "settings.titlesHint": "Traduit automatiquement les titres dans les listes. Un appel de modèle par lot, résultat mis en cache.",
+        "settings.titlesToggle": "Traduire automatiquement les titres",
         "settings.about": "À propos",
         "settings.version": "Version",
         "settings.dataDir": "Données locales",
@@ -1481,9 +1517,18 @@ window.__ModuleLoader__.load({
         }
         return lang === "fr" ? "fr" : "zh";
       }
+      function readStoredTitles(lang) {
+        try {
+          const stored = localStorage.getItem("musee.titles");
+          if (stored === "1") return true;
+          if (stored === "0") return false;
+        } catch {
+        }
+        return lang !== "en";
+      }
 
       // src/client/settings.jsx
-      function SettingsDialog({ t, lang, onLang, targetLang, onTarget, version, dataDir, onClose }) {
+      function SettingsDialog({ t, lang, onLang, targetLang, onTarget, translateTitles, onTranslateTitles, version, dataDir, onClose }) {
         return h(
           Modal,
           {
@@ -1548,6 +1593,22 @@ window.__ModuleLoader__.load({
             h(
               "section",
               { className: "musee-settings-section" },
+              h("h3", null, t("settings.titles")),
+              h("p", { className: "musee-settings-hint" }, t("settings.titlesHint")),
+              h(
+                "label",
+                { className: "musee-check-row" },
+                h("input", {
+                  type: "checkbox",
+                  checked: Boolean(translateTitles),
+                  onChange: (event) => onTranslateTitles(event.target.checked)
+                }),
+                h("span", null, t("settings.titlesToggle"))
+              )
+            ),
+            h(
+              "section",
+              { className: "musee-settings-section" },
               h("h3", null, t("settings.about")),
               h(
                 "dl",
@@ -1584,7 +1645,7 @@ window.__ModuleLoader__.load({
         const issue = paper.issue ? `No. ${paper.issue}` : "";
         return [volume, issue, paper.year].filter(Boolean).join(" ");
       }
-      function App({ t, lang, setLang, targetLang, setTargetLang }) {
+      function App({ t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles }) {
         const [boot, setBoot] = useState(null);
         const [bootError, setBootError] = useState("");
         const [discipline, setDiscipline] = useState("urban");
@@ -1594,6 +1655,11 @@ window.__ModuleLoader__.load({
         const [listState, setListState] = useState("idle");
         const [listError, setListError] = useState("");
         const [listTitle, setListTitle] = useState("");
+        const [journalYears, setJournalYears] = useState([]);
+        const [journalTotal, setJournalTotal] = useState(0);
+        const [journalYear, setJournalYear] = useState(null);
+        const [loadingMore, setLoadingMore] = useState(false);
+        const [titleTranslations, setTitleTranslations] = useState({});
         const [library, setLibrary] = useState([]);
         const [translation, setTranslation] = useState(null);
         const [translating, setTranslating] = useState(false);
@@ -1605,6 +1671,9 @@ window.__ModuleLoader__.load({
         const mainRef = useRef(null);
         const toastTimer = useRef(null);
         const translationsRef = useRef(/* @__PURE__ */ new Map());
+        const titleCacheRef = useRef(/* @__PURE__ */ new Map());
+        const titlePendingRef = useRef(/* @__PURE__ */ new Set());
+        const journalOffsetRef = useRef(0);
         const listRetryRef = useRef(null);
         const showToast = (message) => {
           setToast(message);
@@ -1630,6 +1699,47 @@ window.__ModuleLoader__.load({
         }, []);
         const libraryById = useMemo(() => new Map(library.map((item) => [item.id, item])), [library]);
         const currentDiscipline = boot?.disciplines.find((entry) => entry.id === discipline) || null;
+        const autoTranslateTitles = (list) => {
+          if (!translateTitles || lang === "en" || !boot?.llm || !Array.isArray(list)) return;
+          const additions = {};
+          const pending = [];
+          for (const paper of list) {
+            if (!paper?.title) continue;
+            const key = `${targetLang}|${paper.title}`;
+            const cached = titleCacheRef.current.get(key);
+            if (cached) {
+              additions[paper.id] = cached;
+              continue;
+            }
+            if (titlePendingRef.current.has(key)) continue;
+            titlePendingRef.current.add(key);
+            pending.push({ id: paper.id, title: paper.title, key });
+          }
+          if (Object.keys(additions).length) {
+            setTitleTranslations((prev) => ({ ...prev, ...additions }));
+          }
+          if (!pending.length) return;
+          api.translateTitles(pending.map((entry) => entry.title), targetLang).then((data) => {
+            const fresh = {};
+            (data.translations || []).forEach((text, index) => {
+              const entry = pending[index];
+              if (!entry || !text) return;
+              titleCacheRef.current.set(entry.key, text);
+              fresh[entry.id] = text;
+            });
+            if (Object.keys(fresh).length) setTitleTranslations((prev) => ({ ...prev, ...fresh }));
+          }).catch(() => {
+          }).finally(() => {
+            for (const entry of pending) titlePendingRef.current.delete(entry.key);
+          });
+        };
+        useEffect(() => {
+          setTitleTranslations({});
+        }, [lang, targetLang, translateTitles]);
+        useEffect(() => {
+          if (!translateTitles || lang === "en") return;
+          autoTranslateTitles(papers);
+        }, [papers, lang, targetLang, translateTitles, boot?.llm]);
         const scrollTop = () => {
           if (mainRef.current) mainRef.current.scrollTop = 0;
         };
@@ -1648,11 +1758,36 @@ window.__ModuleLoader__.load({
             setListState("error");
           });
         };
-        const openJournal = (journal) => {
+        const loadJournal = (journal, year = null, append = false) => {
           setView({ kind: "journal", journal });
           setSourceInfo(null);
-          loadList(() => api.journal(journal.id), journal.name, (data) => setSourceInfo(data.source || null));
+          setListTitle(journal.name);
+          setJournalYear(year);
+          setListError("");
+          listRetryRef.current = () => loadJournal(journal, year, false);
+          if (!append) {
+            setPapers([]);
+            setListState("loading");
+            scrollTop();
+          } else {
+            setLoadingMore(true);
+          }
+          const limit = 20;
+          const offset = append ? journalOffsetRef.current : 0;
+          api.journal(journal.id, { limit, offset, year }).then((data) => {
+            journalOffsetRef.current = offset + limit;
+            setPapers((prev) => append ? [...prev, ...data.papers || []] : data.papers || []);
+            setSourceInfo(data.source || null);
+            setJournalYears(data.years || []);
+            setJournalTotal(data.total || 0);
+            setListState("ready");
+            autoTranslateTitles(data.papers || []);
+          }).catch((error) => {
+            setListError(errorText(error));
+            setListState("error");
+          }).finally(() => setLoadingMore(false));
         };
+        const openJournal = (journal) => loadJournal(journal, null, false);
         const openConference = (conference) => {
           setView({ kind: "conference", conference });
           setSourceInfo(null);
@@ -1734,7 +1869,16 @@ window.__ModuleLoader__.load({
         const renderList = () => {
           if (listState === "loading") return h(Loading, { label: t("loading") });
           if (listState === "error") return h(ErrorBanner, { message: listError, onRetry: listRetryRef.current, retryLabel: t("error.retry") });
-          return h(PaperList, { papers, onOpen: openPaper, libraryById, t, emptyTitle: t("empty"), hideVenue: view.kind === "conference" });
+          return h(PaperList, {
+            papers,
+            onOpen: openPaper,
+            libraryById,
+            t,
+            emptyTitle: t("empty"),
+            hideVenue: view.kind === "conference" || view.kind === "journal",
+            showIssue: view.kind === "journal",
+            titleTranslations
+          });
         };
         const renderVenueHead = (venue, kind, options = {}) => {
           const local = localizedName(venue, lang);
@@ -1881,6 +2025,7 @@ window.__ModuleLoader__.load({
               onTranslate: translatePaper,
               translation,
               translating,
+              titleTranslation: titleTranslations[view.paper.id],
               onCite: (items) => setCitation({ papers: items })
             });
           }
@@ -1919,8 +2064,38 @@ window.__ModuleLoader__.load({
                 isOa: sourceInfo?.isOa,
                 homepage: sourceInfo?.homepage
               }),
-              h("div", { className: "musee-section-head", style: { marginTop: "20px" } }, h("h2", null, t("journal.latest"))),
-              renderList()
+              h(
+                "div",
+                { className: "musee-section-head", style: { marginTop: "20px", gap: "12px", flexWrap: "wrap" } },
+                h("h2", null, journalYear ? String(journalYear) : t("journal.papers")),
+                journalTotal ? h("span", null, tr2(t, "journal.total", { n: journalTotal.toLocaleString() })) : null,
+                h("div", { style: { flex: 1 } }),
+                journalYears.length ? h(
+                  "select",
+                  {
+                    className: "musee-select",
+                    style: { width: "auto" },
+                    value: journalYear ?? "",
+                    "aria-label": t("journal.allYears"),
+                    onChange: (event) => loadJournal(view.journal, event.target.value ? Number(event.target.value) : null, false)
+                  },
+                  h("option", { value: "" }, t("journal.allYears")),
+                  journalYears.map(
+                    (entry) => h("option", { key: entry.year, value: String(entry.year) }, `${entry.year} (${entry.count})`)
+                  )
+                ) : null
+              ),
+              renderList(),
+              listState === "ready" && papers.length < journalTotal ? h(
+                "div",
+                { style: { display: "flex", justifyContent: "center", marginTop: "16px" } },
+                h(
+                  Button,
+                  { onClick: () => loadJournal(view.journal, journalYear, true), disabled: loadingMore },
+                  loadingMore ? h(Spinner) : null,
+                  `${t("journal.loadMore")} ${papers.length}/${journalTotal}`
+                )
+              ) : null
             );
           }
           return h(
@@ -2092,6 +2267,8 @@ window.__ModuleLoader__.load({
             onLang: setLang,
             targetLang,
             onTarget: setTargetLang,
+            translateTitles,
+            onTranslateTitles: setTranslateTitles,
             version: boot.version,
             dataDir: boot.dataDir,
             onClose: () => setSettingsOpen(false)
@@ -2106,6 +2283,7 @@ window.__ModuleLoader__.load({
         return function MuseePanel() {
           const [lang, setLangState] = useState(() => readStoredLang(ctx));
           const [targetLang, setTargetLangState] = useState(() => readStoredTarget(readStoredLang(ctx)));
+          const [translateTitles, setTranslateTitlesState] = useState(() => readStoredTitles(readStoredLang(ctx)));
           const t = useMemo(() => makeT(lang), [lang]);
           const setLang = (next) => {
             try {
@@ -2113,6 +2291,10 @@ window.__ModuleLoader__.load({
             } catch {
             }
             setLangState(next);
+            try {
+              if (!localStorage.getItem("musee.target")) setTargetLangState(next === "fr" ? "fr" : "zh");
+            } catch {
+            }
           };
           const setTargetLang = (next) => {
             try {
@@ -2121,7 +2303,14 @@ window.__ModuleLoader__.load({
             }
             setTargetLangState(next);
           };
-          return h(App, { t, lang, setLang, targetLang, setTargetLang });
+          const setTranslateTitles = (next) => {
+            try {
+              localStorage.setItem("musee.titles", next ? "1" : "0");
+            } catch {
+            }
+            setTranslateTitlesState(next);
+          };
+          return h(App, { t, lang, setLang, targetLang, setTargetLang, translateTitles, setTranslateTitles });
         };
       }
       function MuseeIcon({ size = 18, active = false }) {

@@ -28,6 +28,10 @@ Titre en français
 ### ABSTRACT
 Résumé en français`;
 
+const TITLES_ZH = `Translate the following JSON array of academic paper titles into Simplified Chinese. Preserve author names, acronyms, model and dataset names, numbers, and technical terms. Do not explain, comment, or add notes. Return only a JSON array of translated strings in the same order, for example ["译文一","译文二"]. No markdown fences and no other text.`;
+
+const TITLES_FR = `Traduisez le tableau JSON suivant de titres d’articles académiques en français. Conservez les noms d’auteurs, acronymes, noms de modèles et de jeux de données, chiffres et termes techniques. N’expliquez pas et n’ajoutez aucune note. Renvoyez uniquement un tableau JSON de chaînes traduites dans le même ordre, par exemple ["traduction 1","traduction 2"]. Sans balises Markdown ni autre texte.`;
+
 function stripFences(text = '') {
   return String(text)
     .replace(/^\s*```[a-zA-Z]*\s*/m, '')
@@ -43,6 +47,32 @@ function parseSections(text) {
     title: (titleMatch?.[1] || '').trim(),
     abstract: (abstractMatch?.[1] || '').trim(),
   };
+}
+
+function parseTitleTranslations(text, count) {
+  const body = stripFences(text);
+  try {
+    const parsed = JSON.parse(body);
+    if (Array.isArray(parsed)) return parsed.map((value) => String(value ?? '').trim());
+  } catch {
+    /* fall through to line parsing */
+  }
+  const lines = body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const numbered = new Map();
+  for (const line of lines) {
+    const match = /^(?:\*\*)?(\d+)[.、):：](?:\*\*)?\s*(?:\*\*)?(.+?)\s*$/.exec(line);
+    if (match) numbered.set(Number(match[1]) - 1, match[2].replace(/\*\*/g, '').trim());
+  }
+  if (numbered.size) {
+    return Array.from({ length: count }, (_, index) => numbered.get(index) || '');
+  }
+  if (lines.length === count) {
+    return lines.map((line) => line.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim());
+  }
+  return [];
 }
 
 export function createTranslator({ ctx, config, cache }) {
@@ -128,5 +158,74 @@ export function createTranslator({ ctx, config, cache }) {
     return { ...result, cached: false };
   }
 
-  return { available, translate, route: selection };
+  async function translateTitles(titles = [], lang = 'zh') {
+    const llm = ctx.get('llm');
+    if (!llm) throw new Error('当前 profile 没有可用的模型服务，无法翻译。');
+    const route = selection();
+    if (!route) throw new Error('尚未选择翻译模型：请在插件配置里设置 llmProvider / llmModel。');
+
+    const target = lang === 'fr' ? 'fr' : 'zh';
+    const clean = titles.map((title) => String(title || '').replace(/\s+/g, ' ').trim().slice(0, 500));
+    const translations = new Array(clean.length).fill('');
+    const pending = [];
+
+    clean.forEach((title, index) => {
+      if (!title) return;
+      const key = digest(`titles\n${target}\n${route.provider}/${route.model}\n${title}`);
+      const hit = cache.get(key);
+      if (hit?.title) translations[index] = hit.title;
+      else pending.push({ index, title, key });
+    });
+
+    if (!pending.length) return { translations, cached: true, model: `${route.provider}/${route.model}` };
+
+    const titleList = JSON.stringify(pending.map((entry) => entry.title));
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000);
+    let output = '';
+    try {
+      const messages = [{ role: 'user', content: [{ type: 'text', text: titleList }] }];
+      let callConfig = { provider: route.provider, model: route.model, maxTokens: Math.min(4000, 200 + pending.length * 90) };
+      let streamCall;
+      if (typeof llm.prepareCall === 'function') {
+        const prepared = await llm.prepareCall(
+          { provider: route.provider, model: route.model, maxTokens: callConfig.maxTokens },
+          controller.signal,
+        );
+        callConfig = prepared.config;
+        streamCall = (options) => prepared.stream(options);
+      } else {
+        streamCall = (options) => llm.stream(options);
+      }
+      const chunks = streamCall({
+        ...callConfig,
+        messages,
+        system: target === 'fr' ? TITLES_FR : TITLES_ZH,
+        signal: controller.signal,
+      });
+      for await (const chunk of chunks) {
+        if (chunk.type === 'text-delta') output += chunk.text;
+        if (chunk.type === 'finish') {
+          if (chunk.reason?.kind === 'error') throw new Error(chunk.reason.failure?.message || '模型调用失败。');
+          if (chunk.reason?.kind === 'aborted') throw new Error('翻译已取消。');
+        }
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const parsed = parseTitleTranslations(output, pending.length);
+    pending.forEach((entry, index) => {
+      const text = parsed[index];
+      if (!text) return;
+      translations[entry.index] = text;
+      cache.set(entry.key, { title: text, lang: target, at: Date.now() });
+    });
+    if (!translations.some(Boolean)) {
+      throw new Error(`模型没有返回可解析的标题译文：${JSON.stringify(output.slice(0, 160))}`);
+    }
+    return { translations, cached: false, model: `${route.provider}/${route.model}` };
+  }
+
+  return { available, translate, translateTitles, route: selection };
 }
