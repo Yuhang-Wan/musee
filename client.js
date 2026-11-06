@@ -78,6 +78,7 @@ window.__ModuleLoader__.load({
           return request(`/fulltext?${params.toString()}`);
         },
         preferences: () => request("/preferences"),
+        field: (id) => request(`/field?field=${encodeURIComponent(id)}`),
         importImpactFactors: (values) => request("/impact-factors", { method: "POST", body: { values } }),
         follow: (journalId, follow) => request("/preferences", { method: "POST", body: { action: follow ? "follow" : "unfollow", journalId } }),
         home: () => request("/home"),
@@ -588,6 +589,33 @@ window.__ModuleLoader__.load({
     .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
     .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
     .musee-resume { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: var(--musee-accent); font-size: 11.5px; cursor: pointer; }
+    .musee-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-border-l1); }
+    .musee-field-card {
+      display: flex; flex-direction: column; gap: 7px; min-height: 132px; padding: 16px;
+      border: 0; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary);
+      text-align: left; cursor: pointer;
+    }
+    .musee-field-card:hover { background: var(--dsw-alias-bg-layer-2); }
+    .musee-field-kicker { color: var(--musee-accent); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; }
+    .musee-field-name { font-family: var(--musee-serif); font-size: 20px; line-height: 1.2; }
+    .musee-field-blurb { color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.55; }
+    .musee-field-journals { margin-top: 18px; border-top: 1px solid var(--dsw-alias-label-primary); }
+    .musee-field-journal {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 18px; width: 100%;
+      padding: 13px 4px; border: 0; border-bottom: 1px solid var(--dsw-alias-border-l1);
+      background: transparent; color: var(--dsw-alias-label-primary); text-align: left; cursor: pointer;
+    }
+    .musee-field-journal:hover { background: var(--dsw-alias-bg-layer-1); }
+    .musee-field-journal-main { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+    .musee-field-journal-main strong { font-family: var(--musee-serif); font-size: 16px; font-weight: 600; }
+    .musee-field-issn { color: var(--dsw-alias-label-secondary); font-size: 10.5px; white-space: nowrap; }
+    .musee-field-metrics { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; color: var(--dsw-alias-label-secondary); font-size: 11px; }
+    .musee-field-metrics span:first-child { color: var(--musee-accent); }
+    .musee-rec-metric { color: var(--musee-accent); font-size: 10px; letter-spacing: .05em; }
+    @media (max-width: 720px) {
+      .musee-field-journal { flex-direction: column; gap: 6px; }
+      .musee-field-metrics { justify-content: flex-start; }
+    }
     .musee-file {
       display: inline-flex; align-items: center; gap: 6px; margin: 4px 0;
       padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 7px;
@@ -1483,6 +1511,15 @@ window.__ModuleLoader__.load({
         "nav.conferences": "Conferences",
         "nav.library": "Library",
         "nav.home": "Home",
+        "nav.fields": "Disciplines",
+        "fields.title": "All disciplines",
+        "fields.hint": "26 OpenAlex fields. Each shelf ranks leading journals by h-index and shows online citation metrics.",
+        "fields.open": "Open shelf",
+        "fields.back": "All disciplines",
+        "fields.kicker": "Discipline",
+        "fields.loading": "Loading journals…",
+        "fields.onlineNote": "Online metrics from OpenAlex: IF·OA is two-year mean citedness, not the JCR Impact Factor. Rankings use h-index.",
+        "fields.empty": "No journals found.",
         "home.title": "Home",
         "home.kicker": "MUSÉE · READING DESK",
         "home.headline": "Read journals into a knowledge base of your own",
@@ -1535,6 +1572,8 @@ window.__ModuleLoader__.load({
         "paper.fulltext": "Read full text",
         "paper.pdf": "Read PDF",
         "metrics.if": "IF",
+        "metrics.ifOa": "IF·OA",
+        "metrics.ifOaHint": "OpenAlex two-year mean citedness; not the JCR Impact Factor.",
         "metrics.ifHint": "Impact factor imported locally by the user",
         "metrics.twoYear": "2yr citedness",
         "metrics.twoYearHint": "OpenAlex two-year mean citedness, not the JCR Impact Factor",
@@ -1687,6 +1726,15 @@ window.__ModuleLoader__.load({
         "nav.conferences": "顶会",
         "nav.library": "我的库",
         "nav.home": "首页",
+        "nav.fields": "全学科",
+        "fields.title": "全学科阵列",
+        "fields.hint": "26 个 OpenAlex 一级学科。每个学科按 h-index 排列代表性期刊，并显示线上引用指标。",
+        "fields.open": "查看期刊",
+        "fields.back": "全学科",
+        "fields.kicker": "学科",
+        "fields.loading": "正在加载期刊…",
+        "fields.onlineNote": "指标来自 OpenAlex：IF·OA 是两年平均被引，不等同 JCR 影响因子；排序按 h-index。",
+        "fields.empty": "没有找到期刊。",
         "home.title": "首页",
         "home.kicker": "MUSÉE · 期刊阅读台",
         "home.headline": "把期刊读成自己的知识库",
@@ -1739,6 +1787,8 @@ window.__ModuleLoader__.load({
         "paper.fulltext": "全文阅读",
         "paper.pdf": "PDF 阅读",
         "metrics.if": "IF",
+        "metrics.ifOa": "IF·OA",
+        "metrics.ifOaHint": "OpenAlex 两年平均被引；不是 JCR 影响因子。",
         "metrics.ifHint": "用户本地导入的影响因子",
         "metrics.twoYear": "2yr 被引",
         "metrics.twoYearHint": "OpenAlex 两年平均被引，不是 JCR 影响因子",
@@ -1891,6 +1941,15 @@ window.__ModuleLoader__.load({
         "nav.conferences": "Conférences",
         "nav.library": "Bibliothèque",
         "nav.home": "Accueil",
+        "nav.fields": "Disciplines",
+        "fields.title": "Toutes les disciplines",
+        "fields.hint": "26 champs OpenAlex. Chaque rayon classe les revues par h-index et affiche les métriques de citation en ligne.",
+        "fields.open": "Ouvrir",
+        "fields.back": "Toutes les disciplines",
+        "fields.kicker": "Discipline",
+        "fields.loading": "Chargement des revues…",
+        "fields.onlineNote": "Métriques OpenAlex : IF·OA est la moyenne de citations sur deux ans, pas le facteur d’impact JCR. Le classement utilise le h-index.",
+        "fields.empty": "Aucune revue trouvée.",
         "home.title": "Accueil",
         "home.kicker": "MUSÉE · CABINET DE LECTURE",
         "home.headline": "Faites de vos revues une bibliothèque vivante",
@@ -1943,6 +2002,8 @@ window.__ModuleLoader__.load({
         "paper.fulltext": "Lire le texte intégral",
         "paper.pdf": "Lire le PDF",
         "metrics.if": "IF",
+        "metrics.ifOa": "IF·OA",
+        "metrics.ifOaHint": "Moyenne de citations sur deux ans OpenAlex ; pas le facteur d’impact JCR.",
         "metrics.ifHint": "Facteur d’impact importé localement",
         "metrics.twoYear": "citations 2 ans",
         "metrics.twoYearHint": "Moyenne de citations sur deux ans OpenAlex, pas le facteur d’impact JCR",
@@ -5007,6 +5068,101 @@ window.__ModuleLoader__.load({
         );
       }
 
+      // src/client/fields.jsx
+      function tr4(t, key, params) {
+        return tFormat(t(key), params);
+      }
+      function fieldName(field, lang) {
+        return field?.name?.[lang] || field?.name?.en || field?.id || "";
+      }
+      function fieldBlurb(field, lang) {
+        return field?.blurb?.[lang] || field?.blurb?.en || "";
+      }
+      function metricsText(t, journal) {
+        const parts = [];
+        if (journal.userIf) parts.push(`${t("metrics.if")} ${journal.userIf}`);
+        else if (journal.onlineIf) parts.push(`${t("metrics.ifOa")} ${Number(journal.onlineIf).toFixed(1)}`);
+        if (journal.hIndex) parts.push(`${t("metrics.hIndex")} ${journal.hIndex}`);
+        if (journal.worksCount) parts.push(tr4(t, "journal.works", { n: Number(journal.worksCount).toLocaleString() }));
+        return parts;
+      }
+      function FieldsView({ fields, t, lang, onOpenField }) {
+        return h(
+          "div",
+          { className: "musee-page musee-fields-page" },
+          h(
+            "div",
+            { className: "musee-section-head" },
+            h("h1", { className: "musee-display" }, t("fields.title"))
+          ),
+          h("p", { className: "musee-settings-hint", style: { maxWidth: "760px", marginBottom: "20px" } }, t("fields.hint")),
+          h(
+            "div",
+            { className: "musee-field-grid" },
+            (fields || []).map(
+              (field) => h(
+                "button",
+                { key: field.id, type: "button", className: "musee-field-card", onClick: () => onOpenField(field) },
+                h("span", { className: "musee-field-kicker" }, t("fields.open")),
+                h("strong", { className: "musee-field-name" }, fieldName(field, lang)),
+                h("span", { className: "musee-field-blurb" }, fieldBlurb(field, lang))
+              )
+            )
+          )
+        );
+      }
+      function FieldView({ field, t, lang, onBack, onOpenJournal }) {
+        const [data, setData] = useState(null);
+        const [error, setError] = useState("");
+        useEffect(() => {
+          let alive = true;
+          setData(null);
+          setError("");
+          api.field(field.id).then((result) => {
+            if (alive) setData(result);
+          }).catch((reason) => {
+            if (alive) setError(reason.message || String(reason));
+          });
+          return () => {
+            alive = false;
+          };
+        }, [field.id]);
+        return h(
+          "div",
+          { className: "musee-page musee-fields-page" },
+          h("button", { type: "button", className: "musee-back", onClick: onBack }, h(IconBack), t("fields.back")),
+          h(
+            "div",
+            { className: "musee-venue-head" },
+            h("div", null, h("span", { className: "musee-kicker" }, t("fields.kicker")), h("h1", { className: "musee-display" }, fieldName(field, lang))),
+            h("p", { className: "musee-venue-about" }, fieldBlurb(field, lang))
+          ),
+          error ? h(ErrorBanner, { message: error }) : null,
+          !data && !error ? h("div", { className: "musee-page" }, h(Loading, { label: t("fields.loading") })) : data ? h(
+            "div",
+            { className: "musee-field-journals" },
+            h("p", { className: "musee-settings-hint" }, t("fields.onlineNote")),
+            data.journals.map(
+              (journal) => h(
+                "button",
+                { key: journal.id, type: "button", className: "musee-field-journal", onClick: () => onOpenJournal(journal) },
+                h(
+                  "span",
+                  { className: "musee-field-journal-main" },
+                  h("strong", null, journal.name),
+                  journal.issn ? h("span", { className: "musee-field-issn" }, journal.issn) : null
+                ),
+                h(
+                  "span",
+                  { className: "musee-field-metrics" },
+                  metricsText(t, journal).map((part, index) => h("span", { key: `${part}-${index}` }, part))
+                )
+              )
+            )
+          ) : null
+        );
+      }
+
       // src/client/home.jsx
       function localizedName(venue, lang) {
         if (!venue || lang === "en") return "";
@@ -5180,7 +5336,8 @@ window.__ModuleLoader__.load({
                     { className: "musee-rec-info" },
                     h("span", { className: "musee-rec-name" }, journal.name),
                     localizedName(journal, lang) ? h("span", { className: "musee-rec-local" }, localizedName(journal, lang)) : null,
-                    h("span", { className: "musee-rec-about" }, localizedAbout(journal, lang))
+                    h("span", { className: "musee-rec-about" }, localizedAbout(journal, lang)),
+                    journal.userIf ? h("span", { className: "musee-rec-metric" }, `${t("metrics.if")} ${journal.userIf}`) : journal.onlineIf ? h("span", { className: "musee-rec-metric" }, `${t("metrics.ifOa")} ${Number(journal.onlineIf).toFixed(1)}`) : null
                   )
                 ),
                 h(
@@ -5213,7 +5370,7 @@ window.__ModuleLoader__.load({
       }
 
       // src/client/pdf.jsx
-      function tr4(t, key, params) {
+      function tr5(t, key, params) {
         return tFormat(t(key), params);
       }
       function newId2() {
@@ -5464,7 +5621,7 @@ window.__ModuleLoader__.load({
           h("div", { className: "musee-reader-title" }, paper.title),
           h("div", { style: { flex: 1 } }),
           h(Button, { size: "sm", onClick: () => goPage(pageNumber - 1), disabled: pageNumber <= 1, "aria-label": t("pdf.prev") }, "‹"),
-          h("span", { className: "musee-pdf-pageinfo" }, tr4(t, "pdf.pageOf", { n: pageNumber, total: pageCount || "—" })),
+          h("span", { className: "musee-pdf-pageinfo" }, tr5(t, "pdf.pageOf", { n: pageNumber, total: pageCount || "—" })),
           h(Button, { size: "sm", onClick: () => goPage(pageNumber + 1), disabled: pageNumber >= pageCount, "aria-label": t("pdf.next") }, "›"),
           h(Button, { size: "sm", onClick: () => setScale((value) => Math.max(0.5, Number((value - 0.15).toFixed(2)))), "aria-label": t("pdf.zoomOut") }, "−"),
           h("span", { className: "musee-pdf-zoom" }, `${Math.round(scale * 100)}%`),
@@ -5475,7 +5632,7 @@ window.__ModuleLoader__.load({
           return h("div", { className: "musee-pdf-view" }, header, h("div", { className: "musee-page" }, h(Loading, { label: t("pdf.loading") })));
         }
         if (status === "error") {
-          return h("div", { className: "musee-pdf-view" }, header, h("div", { className: "musee-page" }, h(ErrorBanner, { message: tr4(t, "pdf.error", { message: error }) })));
+          return h("div", { className: "musee-pdf-view" }, header, h("div", { className: "musee-page" }, h(ErrorBanner, { message: tr5(t, "pdf.error", { message: error }) })));
         }
         return h(
           "div",
@@ -5584,7 +5741,7 @@ window.__ModuleLoader__.load({
       }
 
       // src/client/app.jsx
-      function tr5(t, key, params) {
+      function tr6(t, key, params) {
         return tFormat(t(key), params);
       }
       function disciplineName(discipline, lang) {
@@ -5639,6 +5796,7 @@ window.__ModuleLoader__.load({
         const [toast, setToast] = useState("");
         const [query, setQuery] = useState("");
         const [paperFrom, setPaperFrom] = useState({ kind: "discover" });
+        const [journalFrom, setJournalFrom] = useState({ kind: "discover" });
         const mainRef = useRef(null);
         const toastTimer = useRef(null);
         const translationsRef = useRef(/* @__PURE__ */ new Map());
@@ -5779,7 +5937,10 @@ window.__ModuleLoader__.load({
             setListState("error");
           }).finally(() => setLoadingMore(false));
         };
-        const openJournal = (journal) => loadJournal(journal, null, false);
+        const openJournal = (journal, from = { kind: "discover" }) => {
+          setJournalFrom(from);
+          loadJournal(journal, null, false);
+        };
         const openConference = (conference) => {
           setView({ kind: "conference", conference });
           setSourceInfo(null);
@@ -5788,7 +5949,7 @@ window.__ModuleLoader__.load({
         const openArxiv = (category) => {
           setView({ kind: "arxiv", category });
           setSourceInfo(null);
-          loadList(() => api.arxiv(category), tr5(t, "arxiv.title", { category }));
+          loadList(() => api.arxiv(category), tr6(t, "arxiv.title", { category }));
         };
         const runSearch = (text2) => {
           const q = String(text2 || "").trim();
@@ -5796,7 +5957,7 @@ window.__ModuleLoader__.load({
           setQuery(q);
           setView({ kind: "search", q });
           setSourceInfo(null);
-          loadList(() => api.search(q), tr5(t, "search.title", { q }));
+          loadList(() => api.search(q), tr6(t, "search.title", { q }));
         };
         const openPaper = (paper) => {
           if (view.kind !== "paper") setPaperFrom(view);
@@ -5819,6 +5980,14 @@ window.__ModuleLoader__.load({
         };
         const goLibrary = () => {
           setView({ kind: "library" });
+          scrollTop();
+        };
+        const goFields = () => {
+          setView({ kind: "fields" });
+          scrollTop();
+        };
+        const openField = (field) => {
+          setView({ kind: "field", field });
           scrollTop();
         };
         const openPdf = (paper) => {
@@ -5885,7 +6054,7 @@ window.__ModuleLoader__.load({
             translationsRef.current.set(paper.id, data);
             setTranslation(data);
           } catch (error) {
-            showToast(tr5(t, "toast.translateFailed", { message: errorText(error) }));
+            showToast(tr6(t, "toast.translateFailed", { message: errorText(error) }));
           } finally {
             setTranslating(false);
           }
@@ -5937,14 +6106,13 @@ window.__ModuleLoader__.load({
                 { className: "musee-venue-meta" },
                 options.issn ? h("span", null, options.issn) : null,
                 venue.series ? h(Pill, { tone: "brand" }, seriesLabel(venue.series)) : null,
-                options.userIf ? h("span", { title: t("metrics.ifHint") }, `${t("metrics.if")} ${options.userIf}`) : null,
-                options.metrics?.twoYearMeanCitedness ? h(
+                options.userIf ? h("span", { title: t("metrics.ifHint") }, `${t("metrics.if")} ${options.userIf}`) : options.metrics?.twoYearMeanCitedness || options.onlineIf ? h(
                   "span",
-                  { title: t("metrics.twoYearHint") },
-                  `${t("metrics.twoYear")} ${Number(options.metrics.twoYearMeanCitedness).toFixed(1)}`
+                  { title: t("metrics.ifOaHint") },
+                  `${t("metrics.ifOa")} ${Number(options.metrics?.twoYearMeanCitedness || options.onlineIf).toFixed(1)}`
                 ) : null,
                 options.metrics?.hIndex ? h("span", null, `${t("metrics.hIndex")} ${options.metrics.hIndex}`) : null,
-                options.worksCount ? h("span", null, tr5(t, "journal.works", { n: options.worksCount.toLocaleString() })) : null,
+                options.worksCount ? h("span", null, tr6(t, "journal.works", { n: options.worksCount.toLocaleString() })) : null,
                 options.isOa ? h(Pill, { tone: "success" }, t("journal.oa")) : null,
                 kind === "conference" ? h(Pill, { tone: "brand" }, t(venue.group === "robotics" ? "conference.group.robotics" : "conference.group.ai")) : null,
                 options.homepage ? h("a", { href: options.homepage, target: "_blank", rel: "noreferrer" }, `${t("journal.officialSite")} ↗`) : null
@@ -6035,7 +6203,7 @@ window.__ModuleLoader__.load({
                         h("span", null, journal.issn),
                         h("span", null, journal.short),
                         journal.series ? h("span", null, seriesLabel(journal.series)) : null,
-                        journal.userIf ? h("span", null, `${t("metrics.if")} ${journal.userIf}`) : null
+                        journal.userIf ? h("span", null, `${t("metrics.if")} ${journal.userIf}`) : journal.onlineIf ? h("span", null, `${t("metrics.ifOa")} ${Number(journal.onlineIf).toFixed(1)}`) : null
                       )
                     )
                   )
@@ -6159,6 +6327,23 @@ window.__ModuleLoader__.load({
             });
           }
           if (view.kind === "discover") return renderDiscover();
+          if (view.kind === "fields") {
+            return h(FieldsView, {
+              fields: boot?.fields || [],
+              t,
+              lang,
+              onOpenField: openField
+            });
+          }
+          if (view.kind === "field") {
+            return h(FieldView, {
+              field: view.field,
+              t,
+              lang,
+              onBack: goFields,
+              onOpenJournal: (journal) => openJournal(journal, { kind: "field", field: view.field })
+            });
+          }
           if (view.kind === "conference") {
             return h(
               "div",
@@ -6174,7 +6359,10 @@ window.__ModuleLoader__.load({
             return h(
               "div",
               { className: "musee-page" },
-              h("button", { type: "button", className: "musee-back", onClick: goDiscover }, h(IconBack), t("journal.back")),
+              h("button", { type: "button", className: "musee-back", onClick: () => {
+                setView(journalFrom || { kind: "discover" });
+                scrollTop();
+              } }, h(IconBack), t("journal.back")),
               renderVenueHead(view.journal, view.journal.discipline, {
                 issue: issueLabel(papers[0]),
                 issn: view.journal.issn,
@@ -6190,7 +6378,7 @@ window.__ModuleLoader__.load({
                 "div",
                 { className: "musee-section-head", style: { marginTop: "20px", gap: "12px", flexWrap: "wrap" } },
                 h("h2", null, journalYear ? String(journalYear) : t("journal.papers")),
-                journalTotal ? h("span", null, tr5(t, "journal.total", { n: journalTotal.toLocaleString() })) : null,
+                journalTotal ? h("span", null, tr6(t, "journal.total", { n: journalTotal.toLocaleString() })) : null,
                 h("div", { style: { flex: 1 } }),
                 journalYears.length ? h(
                   "select",
@@ -6270,7 +6458,20 @@ window.__ModuleLoader__.load({
               "nav",
               { className: "musee-nav" },
               h("button", { type: "button", className: `musee-nav-btn ${view.kind === "home" ? "active" : ""}`, onClick: goHome }, t("nav.home")),
-              h("button", { type: "button", className: `musee-nav-btn ${view.kind !== "home" && view.kind !== "library" ? "active" : ""}`, onClick: goDiscover }, t("nav.discover")),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: `musee-nav-btn ${!["home", "library", "fields", "field"].includes(view.kind) ? "active" : ""}`,
+                  onClick: goDiscover
+                },
+                t("nav.discover")
+              ),
+              h(
+                "button",
+                { type: "button", className: `musee-nav-btn ${["fields", "field"].includes(view.kind) ? "active" : ""}`, onClick: goFields },
+                t("nav.fields")
+              ),
               h(
                 "button",
                 { type: "button", className: `musee-nav-btn ${view.kind === "library" ? "active" : ""}`, onClick: goLibrary },

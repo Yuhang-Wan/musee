@@ -16,7 +16,8 @@ Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 - **旗舰系列**：Nature 系、Science 系、Cell 系共 24 本期刊（含 Nature Chemistry/Materials/Medicine、Science Signaling/Immunology、Molecular Cell/Neuron/Immunity 等），在「旗舰系列」标签下按系列浏览。
 - **首页动态**：打开 Musée 先看到首页，汇总你关注期刊的最新 3 篇论文；期刊卡片上的星标即可关注/取消关注。
 - **图文期刊卡片**：每本期刊有原创排版封面（随学科变色的书脊设计）、Musée 撰写的范围简介、ISSN 与收录量；详情页显示最新一卷/期。
-- **引用指标**：期刊页显示 OpenAlex 的两年平均被引与 h-index；支持从本地导入 JCR 影响因子（需自备授权数据，Musée 不内置）。
+- **引用指标**：期刊页显示 OpenAlex 的两年平均被引与 h-index；期刊列表和全学科阵列还会在线读取 `IF·OA`（OpenAlex 两年平均被引，不是 JCR IF）。支持从本地导入 JCR 影响因子（需自备授权数据，Musée 不内置）。
+- **全学科阵列**：按 26 个 OpenAlex 一级学科（医学、物理、化学、计算机、工程、社会科学、人文等）动态排列，每个学科在线取 h-index 靠前的期刊，直接进入期刊最新论文。
 - **PDF 内置阅读**：arXiv 论文在面板内用 PDF.js 自绘阅读器打开，支持翻页、缩放、文本层选择、高亮、划词翻译与批注；批注按页码和选区位置保存在 `library.json`，并随 Markdown 导出。
 - **往期浏览**：期刊页可按年份筛选（带每年篇数）、显示总篇数与卷/期，底部「加载更多」逐页翻看历史论文。
 - **标题翻译**：论文列表自动把标题批量译成当前翻译语言，缓存在本地；设置里可一键关闭，关闭后不再调用模型。
@@ -86,7 +87,7 @@ Musée 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) �
 
 ### 本地导入影响因子
 
-JCR 影响因子是 Clarivate 的版权数据，Musée 不内置、也不抓取。若你已有授权数据，可在 `~/.dsh/musee/impact-factors.json` 按 ISSN 写入，或在 Musée 设置 →「影响因子」直接导入该 JSON：
+JCR 影响因子是 Clarivate 的版权数据，Musée 不内置、也不抓取。没有本地文件时，期刊列表和全学科阵列会显示在线 `IF·OA`（OpenAlex 两年平均被引），并明确标注它不是 JCR IF。若你已有授权数据，可在 `~/.dsh/musee/impact-factors.json` 按 ISSN 写入，或在 Musée 设置 →「影响因子」直接导入该 JSON：
 
 ```json
 {
@@ -161,9 +162,8 @@ cordis.patch.yml      插件清单
 
 ## 路线图
 
-- **v0.8 深读与开放全文（当前）**：HTML 段落高亮/批注、PMC JATS 适配、阅读进度。
-- **v0.9 知识管理**：Zotero / BibTeX 导入，引用网络与“被谁引用”提醒，期刊订阅与每日新文。
-- **v1.0 智能阅读与全学科**：Agent 工具、论文问答、观点卡片、可导入期刊目录与 npm 发布。
+- **v0.9 全学科与在线指标（当前）**：26 个 OpenAlex 学科阵列、在线 `IF·OA`、动态学科期刊。
+- **v1.0 智能阅读**：Zotero / BibTeX 导入、引用网络、期刊订阅与每日新文、论文问答与 Agent 工具。
 
 欢迎在 Issues 里补充你所在领域的期刊清单和使用场景。
 

@@ -4,11 +4,12 @@ import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { CONFERENCES, CONFERENCES_BY_ID, DISCIPLINES, JOURNALS, JOURNALS_BY_ID, RECOMMENDED_JOURNALS, VERSION, journalsFor } from './catalog.js';
+import { FIELDS, FIELDS_BY_ID } from './fields.js';
 import { latestByCategory } from './arxiv.js';
 import { cite } from './cite.js';
 import { fetchArxivFulltext } from './fulltext.js';
 import { fetchPmcFulltext, isDoi, normalizeDoi } from './pmc.js';
-import { fetchSource, searchWorks, worksBySource, worksBySourcePage, yearCounts } from './openalex.js';
+import { fetchSource, fetchSourcesByIds, fetchSourcesForField, searchWorks, worksBySource, worksBySourcePage, yearCounts } from './openalex.js';
 import { createStore } from './store.js';
 import { createTranslator } from './translate.js';
 import { TtlCache } from './util.js';
@@ -60,11 +61,48 @@ function isSameOrigin(request, url) {
   return true;
 }
 
-function disciplinePayload(store) {
+function journalOnline(journal, metrics) {
+  const source = metrics?.[journal.openalex];
+  return {
+    ...journal,
+    onlineIf: source?.metrics?.twoYearMeanCitedness || null,
+    hIndex: source?.metrics?.hIndex || null,
+    worksCount: source?.worksCount || null,
+  };
+}
+
+function fieldJournal(field, source) {
+  return {
+    id: `field-${field.id}-${source.id}`,
+    discipline: field.id,
+    field: field.id,
+    name: source.name,
+    short: shortName(source.name),
+    issn: source.issn,
+    openalex: source.id,
+    onlineIf: source.metrics?.twoYearMeanCitedness || null,
+    hIndex: source.metrics?.hIndex || null,
+    worksCount: source.worksCount || null,
+    about: `Leading ${field.name.en} journal by OpenAlex h-index.`,
+    aboutZh: `按 OpenAlex h-index 选出的${field.name.zh}期刊。`,
+    aboutFr: `Revue de ${field.name.fr} classée par h-index OpenAlex.`,
+  };
+}
+
+function shortName(name = '') {
+  const words = String(name)
+    .replace(/[^\p{L}\p{N} ]/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+  const letters = words.slice(0, 5).map((word) => word[0]).join('').toUpperCase();
+  return letters.slice(0, 5) || 'J';
+}
+
+function disciplinePayload(store, metrics) {
   return DISCIPLINES.map((discipline) => ({
     ...discipline,
     journals: journalsFor(discipline.id).map((journal) => ({
-      ...journal,
+      ...journalOnline(journal, metrics),
       userIf: store.impactFactor(journal.issn),
     })),
   }));
@@ -76,7 +114,46 @@ export function createMusee(ctx, config = {}) {
   const cache = new TtlCache(10 * 60 * 1000, 160);
   const sourceCache = new TtlCache(24 * 60 * 60 * 1000, 64);
   const fulltextCache = new TtlCache(30 * 60 * 1000, 16);
+  const metricsCache = new TtlCache(6 * 60 * 60 * 1000, 8);
+  const fieldCache = new TtlCache(6 * 60 * 60 * 1000, 32);
+  const dynamicJournals = new Map();
   const storePromise = createStore(dataDir);
+
+  async function metricsFor(journals) {
+    const ids = [...new Set(journals.map((journal) => journal.openalex).filter(Boolean))].sort();
+    if (!ids.length) return {};
+    const key = ids.join('|');
+    return metricsCache.wrap(key, async () => {
+      try {
+        const sources = await Promise.race([
+          fetchSourcesByIds(ids, { mailto }),
+          new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+        ]);
+        if (!sources) return {};
+        return Object.fromEntries(sources.map((source) => [source.id, source]));
+      } catch (error) {
+        console.warn('[musee] online journal metrics failed:', error?.message || error);
+        return {};
+      }
+    });
+  }
+
+  async function resolveJournal(journalId) {
+    const direct = JOURNALS_BY_ID.get(journalId) || dynamicJournals.get(journalId);
+    if (direct) return direct;
+    const match = /^field-(\d+)-(S\d+)$/.exec(String(journalId || ''));
+    if (!match) return null;
+    const field = FIELDS_BY_ID.get(match[1]);
+    if (!field) return null;
+    try {
+      const source = await sourceCache.wrap(`source:${match[2]}`, () => fetchSource(match[2], { mailto }));
+      const journal = fieldJournal(field, source);
+      dynamicJournals.set(journal.id, journal);
+      return journal;
+    } catch {
+      return null;
+    }
+  }
 
   // The translator is created synchronously while the store loads asynchronously;
   // bridge reads and writes into the durable translation cache once it is ready.
@@ -126,12 +203,14 @@ export function createMusee(ctx, config = {}) {
     const pathname = url.pathname.replace(/^\/musee\/api/, '') || '/';
 
     if (pathname === '/bootstrap') {
+      const online = await metricsFor(JOURNALS);
       return json({
         version: VERSION,
-        disciplines: disciplinePayload(store),
+        disciplines: disciplinePayload(store, online),
+        fields: FIELDS,
         conferences: CONFERENCES,
         recommended: RECOMMENDED_JOURNALS.map((journal) => ({
-          ...journal,
+          ...journalOnline(journal, online),
           userIf: store.impactFactor(journal.issn),
         })),
         followedJournals: store.followedJournals(),
@@ -145,9 +224,31 @@ export function createMusee(ctx, config = {}) {
       return json({ version: VERSION, llm: translator.available(), route: translator.route(), dataDir });
     }
 
+    if (pathname === '/field') {
+      const fieldId = String(url.searchParams.get('field') || '').trim();
+      const field = FIELDS_BY_ID.get(fieldId);
+      if (!field) return json({ error: '未知的学科。' }, 404);
+      let journals;
+      try {
+        journals = await fieldCache.wrap(`field:${fieldId}`, async () => {
+          const sources = await fetchSourcesForField(fieldId, { limit: 14, mailto });
+          return sources
+            .filter((source) => source.id && source.name)
+            .map((source) => fieldJournal(field, source));
+        });
+      } catch (error) {
+        return json({ error: `学科期刊加载失败：${error?.message || error}` }, 502);
+      }
+      for (const journal of journals) dynamicJournals.set(journal.id, journal);
+      return json({
+        field,
+        journals: journals.map((journal) => ({ ...journal, userIf: store.impactFactor(journal.issn) })),
+      });
+    }
+
     if (pathname === '/journal') {
       const journalId = url.searchParams.get('journalId') || '';
-      const journal = JOURNALS_BY_ID.get(journalId);
+      const journal = await resolveJournal(journalId);
       if (!journal) return json({ error: '未知的期刊。' }, 404);
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 20, 1), 50);
       const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
@@ -161,7 +262,12 @@ export function createMusee(ctx, config = {}) {
         worksBySourcePage(journal.openalex, { limit, offset, year, mailto }),
       );
       return json({
-        journal: { ...journal, userIf: store.impactFactor(journal.issn) },
+        journal: {
+          ...journal,
+          userIf: store.impactFactor(journal.issn),
+          onlineIf: source?.metrics?.twoYearMeanCitedness || journal.onlineIf || null,
+          hIndex: source?.metrics?.hIndex || journal.hIndex || null,
+        },
         source,
         years,
         year,
@@ -253,11 +359,9 @@ export function createMusee(ctx, config = {}) {
     }
 
     if (pathname === '/home') {
-      const journals = store
-        .followedJournals()
-        .slice(0, 8)
-        .map((id) => JOURNALS_BY_ID.get(id))
-        .filter(Boolean);
+      const journals = (
+        await Promise.all(store.followedJournals().slice(0, 8).map((id) => resolveJournal(id)))
+      ).filter(Boolean);
       const feed = await Promise.all(
         journals.map(async (journal) => {
           const page = await cache.wrap(`home:${journal.id}`, () =>
@@ -284,7 +388,7 @@ export function createMusee(ctx, config = {}) {
       if (request.method === 'POST') {
         const body = await request.json();
         const journalId = String(body.journalId || '');
-        if (!JOURNALS_BY_ID.has(journalId)) return json({ error: '未知的期刊。' }, 404);
+        if (!(await resolveJournal(journalId))) return json({ error: '未知的期刊。' }, 404);
         const followed =
           body.action === 'unfollow' ? await store.unfollowJournal(journalId) : await store.followJournal(journalId);
         return json({ followedJournals: followed });

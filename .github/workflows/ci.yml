@@ -20,6 +20,7 @@ jobs:
         run: |
           node tools/test-cite.mjs
           node tools/test-math.mjs
+          node tools/test-fields.mjs
       - name: Build client bundle
         run: node tools/build.mjs
       - name: Syntax check

@@ -8,6 +8,7 @@ import { CitationDialog } from './citation.jsx';
 import { JournalCover } from './cover.jsx';
 import { SettingsDialog } from './settings.jsx';
 import { Reader } from './reader.jsx';
+import { FieldsView, FieldView } from './fields.jsx';
 import { Home } from './home.jsx';
 import { PdfViewer } from './pdf.jsx';
 
@@ -72,6 +73,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
   const [paperFrom, setPaperFrom] = useState({ kind: 'discover' });
+  const [journalFrom, setJournalFrom] = useState({ kind: 'discover' });
   const mainRef = useRef(null);
   const toastTimer = useRef(null);
   const translationsRef = useRef(new Map());
@@ -239,7 +241,10 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
       .finally(() => setLoadingMore(false));
   };
 
-  const openJournal = (journal) => loadJournal(journal, null, false);
+  const openJournal = (journal, from = { kind: 'discover' }) => {
+    setJournalFrom(from);
+    loadJournal(journal, null, false);
+  };
 
   const openConference = (conference) => {
     setView({ kind: 'conference', conference });
@@ -287,6 +292,16 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
 
   const goLibrary = () => {
     setView({ kind: 'library' });
+    scrollTop();
+  };
+
+  const goFields = () => {
+    setView({ kind: 'fields' });
+    scrollTop();
+  };
+
+  const openField = (field) => {
+    setView({ kind: 'field', field });
     scrollTop();
   };
 
@@ -418,14 +433,15 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
           { className: 'musee-venue-meta' },
           options.issn ? h('span', null, options.issn) : null,
           venue.series ? h(Pill, { tone: 'brand' }, seriesLabel(venue.series)) : null,
-          options.userIf ? h('span', { title: t('metrics.ifHint') }, `${t('metrics.if')} ${options.userIf}`) : null,
-          options.metrics?.twoYearMeanCitedness
-            ? h(
-                'span',
-                { title: t('metrics.twoYearHint') },
-                `${t('metrics.twoYear')} ${Number(options.metrics.twoYearMeanCitedness).toFixed(1)}`,
-              )
-            : null,
+          options.userIf
+            ? h('span', { title: t('metrics.ifHint') }, `${t('metrics.if')} ${options.userIf}`)
+            : options.metrics?.twoYearMeanCitedness || options.onlineIf
+              ? h(
+                  'span',
+                  { title: t('metrics.ifOaHint') },
+                  `${t('metrics.ifOa')} ${Number(options.metrics?.twoYearMeanCitedness || options.onlineIf).toFixed(1)}`,
+                )
+              : null,
           options.metrics?.hIndex ? h('span', null, `${t('metrics.hIndex')} ${options.metrics.hIndex}`) : null,
           options.worksCount ? h('span', null, tr(t, 'journal.works', { n: options.worksCount.toLocaleString() })) : null,
           options.isOa ? h(Pill, { tone: 'success' }, t('journal.oa')) : null,
@@ -523,7 +539,11 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
                   h('span', null, journal.issn),
                   h('span', null, journal.short),
                   journal.series ? h('span', null, seriesLabel(journal.series)) : null,
-                  journal.userIf ? h('span', null, `${t('metrics.if')} ${journal.userIf}`) : null,
+                  journal.userIf
+                    ? h('span', null, `${t('metrics.if')} ${journal.userIf}`)
+                    : journal.onlineIf
+                      ? h('span', null, `${t('metrics.ifOa')} ${Number(journal.onlineIf).toFixed(1)}`)
+                      : null,
                 ),
               ),
             ),
@@ -656,6 +676,25 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
 
     if (view.kind === 'discover') return renderDiscover();
 
+    if (view.kind === 'fields') {
+      return h(FieldsView, {
+        fields: boot?.fields || [],
+        t,
+        lang,
+        onOpenField: openField,
+      });
+    }
+
+    if (view.kind === 'field') {
+      return h(FieldView, {
+        field: view.field,
+        t,
+        lang,
+        onBack: goFields,
+        onOpenJournal: (journal) => openJournal(journal, { kind: 'field', field: view.field }),
+      });
+    }
+
     if (view.kind === 'conference') {
       return h(
         'div',
@@ -672,7 +711,7 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
       return h(
         'div',
         { className: 'musee-page' },
-        h('button', { type: 'button', className: 'musee-back', onClick: goDiscover }, h(IconBack), t('journal.back')),
+        h('button', { type: 'button', className: 'musee-back', onClick: () => { setView(journalFrom || { kind: 'discover' }); scrollTop(); } }, h(IconBack), t('journal.back')),
         renderVenueHead(view.journal, view.journal.discipline, {
           issue: issueLabel(papers[0]),
           issn: view.journal.issn,
@@ -774,7 +813,20 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
         'nav',
         { className: 'musee-nav' },
         h('button', { type: 'button', className: `musee-nav-btn ${view.kind === 'home' ? 'active' : ''}`, onClick: goHome }, t('nav.home')),
-        h('button', { type: 'button', className: `musee-nav-btn ${view.kind !== 'home' && view.kind !== 'library' ? 'active' : ''}`, onClick: goDiscover }, t('nav.discover')),
+        h(
+          'button',
+          {
+            type: 'button',
+            className: `musee-nav-btn ${!['home', 'library', 'fields', 'field'].includes(view.kind) ? 'active' : ''}`,
+            onClick: goDiscover,
+          },
+          t('nav.discover'),
+        ),
+        h(
+          'button',
+          { type: 'button', className: `musee-nav-btn ${['fields', 'field'].includes(view.kind) ? 'active' : ''}`, onClick: goFields },
+          t('nav.fields'),
+        ),
         h(
           'button',
           { type: 'button', className: `musee-nav-btn ${view.kind === 'library' ? 'active' : ''}`, onClick: goLibrary },

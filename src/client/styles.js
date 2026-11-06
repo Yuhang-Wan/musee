@@ -463,6 +463,33 @@ export const CSS = `
 .musee-translated-section h2 { font-size: 20px; line-height: 1.35; margin: 0 0 10px; }
 .musee-reader-placeholder { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 .musee-resume { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 0; border: 0; background: transparent; color: var(--musee-accent); font-size: 11.5px; cursor: pointer; }
+.musee-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-border-l1); }
+.musee-field-card {
+  display: flex; flex-direction: column; gap: 7px; min-height: 132px; padding: 16px;
+  border: 0; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary);
+  text-align: left; cursor: pointer;
+}
+.musee-field-card:hover { background: var(--dsw-alias-bg-layer-2); }
+.musee-field-kicker { color: var(--musee-accent); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; }
+.musee-field-name { font-family: var(--musee-serif); font-size: 20px; line-height: 1.2; }
+.musee-field-blurb { color: var(--dsw-alias-label-secondary); font-size: 11.5px; line-height: 1.55; }
+.musee-field-journals { margin-top: 18px; border-top: 1px solid var(--dsw-alias-label-primary); }
+.musee-field-journal {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 18px; width: 100%;
+  padding: 13px 4px; border: 0; border-bottom: 1px solid var(--dsw-alias-border-l1);
+  background: transparent; color: var(--dsw-alias-label-primary); text-align: left; cursor: pointer;
+}
+.musee-field-journal:hover { background: var(--dsw-alias-bg-layer-1); }
+.musee-field-journal-main { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.musee-field-journal-main strong { font-family: var(--musee-serif); font-size: 16px; font-weight: 600; }
+.musee-field-issn { color: var(--dsw-alias-label-secondary); font-size: 10.5px; white-space: nowrap; }
+.musee-field-metrics { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; color: var(--dsw-alias-label-secondary); font-size: 11px; }
+.musee-field-metrics span:first-child { color: var(--musee-accent); }
+.musee-rec-metric { color: var(--musee-accent); font-size: 10px; letter-spacing: .05em; }
+@media (max-width: 720px) {
+  .musee-field-journal { flex-direction: column; gap: 6px; }
+  .musee-field-metrics { justify-content: flex-start; }
+}
 .musee-file {
   display: inline-flex; align-items: center; gap: 6px; margin: 4px 0;
   padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 7px;

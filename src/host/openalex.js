@@ -132,11 +132,14 @@ export async function yearCounts(sourceId, { mailto = '' } = {}) {
     .sort((a, b) => b.year - a.year);
 }
 
-export async function fetchSource(sourceId, { mailto = '' } = {}) {
-  const url = `https://api.openalex.org/sources/${sourceId}${mailto ? `?mailto=${encodeURIComponent(mailto)}` : ''}`;
-  const data = await fetchJson(url);
+export function openAlexSourceId(value = '') {
+  const match = /(?:openalex\.org\/)?(S\d+)/i.exec(String(value));
+  return match ? match[1] : String(value || '');
+}
+
+function normalizeSource(data) {
   return {
-    id: openAlexId(data.id),
+    id: openAlexSourceId(data.id),
     name: data.display_name || '',
     type: data.type || '',
     homepage: data.homepage_url || '',
@@ -146,12 +149,73 @@ export async function fetchSource(sourceId, { mailto = '' } = {}) {
     issn: data.issn_l || '',
     firstYear: data.first_publication_year || null,
     lastYear: data.last_publication_year || null,
+    topics: data.topics || [],
+    topicShare: data.topic_share || [],
     metrics: {
       twoYearMeanCitedness: data.summary_stats?.['2yr_mean_citedness'] || 0,
       hIndex: data.summary_stats?.h_index || 0,
       i10Index: data.summary_stats?.i10_index || 0,
     },
   };
+}
+
+export async function fetchSource(sourceId, { mailto = '' } = {}) {
+  const url = `https://api.openalex.org/sources/${sourceId}${mailto ? `?mailto=${encodeURIComponent(mailto)}` : ''}`;
+  return normalizeSource(await fetchJson(url));
+}
+
+export async function fetchSourcesByIds(ids = [], { mailto = '' } = {}) {
+  const unique = [...new Set(ids.map(openAlexSourceId).filter(Boolean))];
+  const out = [];
+  for (let offset = 0; offset < unique.length; offset += 25) {
+    const chunk = unique.slice(offset, offset + 25);
+    const params = new URLSearchParams({
+      filter: `openalex_id:${chunk.join('|')}`,
+      'per-page': '50',
+      select: 'id,display_name,issn_l,summary_stats,works_count,type,homepage_url,is_oa',
+    });
+    if (mailto) params.set('mailto', mailto);
+    const data = await fetchJson(`https://api.openalex.org/sources?${params.toString()}`);
+    out.push(...(data.results || []).map(normalizeSource));
+  }
+  return out;
+}
+
+export async function fetchSourcesForField(fieldId, { limit = 12, mailto = '' } = {}) {
+  const params = new URLSearchParams({
+    filter: `topics.field.id:${fieldId},type:journal,works_count:>200`,
+    sort: 'summary_stats.h_index:desc',
+    'per-page': '200',
+    select: 'id,display_name,issn_l,summary_stats,works_count,type,homepage_url,is_oa,topic_share',
+  });
+  if (mailto) params.set('mailto', mailto);
+  const data = await fetchJson(`https://api.openalex.org/sources?${params.toString()}`);
+  const fieldKey = `https://openalex.org/fields/${fieldId}`;
+  const candidates = (data.results || []).map(normalizeSource);
+  const specialized = candidates.filter((source) => {
+    const shares = new Map();
+    let total = 0;
+    for (const topic of source.topicShare || []) {
+      const id = topic.field?.id || '';
+      const share = Number(topic.value) || 0;
+      if (!id || !share) continue;
+      shares.set(id, (shares.get(id) || 0) + share);
+      total += share;
+    }
+    if (!total) return false;
+    const fieldShare = shares.get(fieldKey) || 0;
+    const max = Math.max(...shares.values());
+    return fieldShare === max && fieldShare / total >= 0.25;
+  });
+  const seen = new Set();
+  const broad = /^(nature|science|cell|the lancet|bmj|proceedings of the national academy of sciences|nature communications|plos one|scientific reports)$/i;
+  const unique = specialized.filter((source) => {
+    const key = source.name.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!key || seen.has(key) || broad.test(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return unique.slice(0, Math.min(Math.max(limit, 1), 40));
 }
 
 export async function searchWorks(query, { limit = 20, mailto = '' } = {}) {

@@ -183,6 +183,11 @@ export function Home({ t, lang, feed, recommended, loading, error, followed, onO
                   h('span', { className: 'musee-rec-name' }, journal.name),
                   localizedName(journal, lang) ? h('span', { className: 'musee-rec-local' }, localizedName(journal, lang)) : null,
                   h('span', { className: 'musee-rec-about' }, localizedAbout(journal, lang)),
+                  journal.userIf
+                    ? h('span', { className: 'musee-rec-metric' }, `${t('metrics.if')} ${journal.userIf}`)
+                    : journal.onlineIf
+                      ? h('span', { className: 'musee-rec-metric' }, `${t('metrics.ifOa')} ${Number(journal.onlineIf).toFixed(1)}`)
+                      : null,
                 ),
               ),
               h(
