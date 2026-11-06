@@ -969,6 +969,14 @@ window.__ModuleLoader__.load({
           h("circle", { cx: 9, cy: 17, r: 2.2 })
         );
       }
+      function IconRefresh({ size = 16 }) {
+        return h(
+          "svg",
+          { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+          h("path", { d: "M20 11a8 8 0 1 0-2.35 5.65" }),
+          h("path", { d: "M20 4v7h-7" })
+        );
+      }
       function IconStar({ size = 14, filled = false }) {
         return h(
           "svg",
@@ -1511,6 +1519,7 @@ window.__ModuleLoader__.load({
         "nav.conferences": "Conferences",
         "nav.library": "Library",
         "nav.home": "Home",
+        "nav.refresh": "Refresh panel",
         "nav.fields": "Disciplines",
         "fields.title": "All disciplines",
         "fields.hint": "26 OpenAlex fields. Each shelf ranks leading journals by h-index and shows online citation metrics.",
@@ -1726,6 +1735,7 @@ window.__ModuleLoader__.load({
         "nav.conferences": "顶会",
         "nav.library": "我的库",
         "nav.home": "首页",
+        "nav.refresh": "刷新面板",
         "nav.fields": "全学科",
         "fields.title": "全学科阵列",
         "fields.hint": "26 个 OpenAlex 一级学科。每个学科按 h-index 排列代表性期刊，并显示线上引用指标。",
@@ -1941,6 +1951,7 @@ window.__ModuleLoader__.load({
         "nav.conferences": "Conférences",
         "nav.library": "Bibliothèque",
         "nav.home": "Accueil",
+        "nav.refresh": "Rafraîchir le panneau",
         "nav.fields": "Disciplines",
         "fields.title": "Toutes les disciplines",
         "fields.hint": "26 champs OpenAlex. Chaque rayon classe les revues par h-index et affiche les métriques de citation en ligne.",
@@ -6478,6 +6489,17 @@ window.__ModuleLoader__.load({
                 t("nav.library"),
                 library.length ? h("span", { className: "musee-nav-count" }, String(library.length)) : null
               )
+            ),
+            h(
+              "button",
+              {
+                type: "button",
+                className: "musee-icon-btn",
+                onClick: () => window.location.reload(),
+                "aria-label": t("nav.refresh"),
+                title: t("nav.refresh")
+              },
+              h(IconRefresh)
             ),
             h(
               "button",

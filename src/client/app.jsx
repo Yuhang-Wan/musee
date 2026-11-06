@@ -1,7 +1,7 @@
 import { h, useEffect, useMemo, useRef, useState } from './react.js';
 import { api, downloadExport, tFormat } from './api.js';
 import { CSS } from './styles.js';
-import { Button, Empty, ErrorBanner, IconBack, IconBook, IconSearch, IconSettings, IconStar, Loading, Pill, Spinner } from './ui.jsx';
+import { Button, Empty, ErrorBanner, IconBack, IconBook, IconRefresh, IconSearch, IconSettings, IconStar, Loading, Pill, Spinner } from './ui.jsx';
 import { PaperDetail, PaperList } from './paper.jsx';
 import { LibraryView } from './library.jsx';
 import { CitationDialog } from './citation.jsx';
@@ -833,6 +833,17 @@ export function App({ t, lang, setLang, targetLang, setTargetLang, translateTitl
           t('nav.library'),
           library.length ? h('span', { className: 'musee-nav-count' }, String(library.length)) : null,
         ),
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          className: 'musee-icon-btn',
+          onClick: () => window.location.reload(),
+          'aria-label': t('nav.refresh'),
+          title: t('nav.refresh'),
+        },
+        h(IconRefresh),
       ),
       h(
         'button',
